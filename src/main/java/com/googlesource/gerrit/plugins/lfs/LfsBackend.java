@@ -31,7 +31,11 @@ public class LfsBackend {
 
   @Override
   public int hashCode() {
-    return Objects.hash(Strings.isNullOrEmpty(name) ? DEFAULT : name, type);
+    return Objects.hash(getName(), type);
+  }
+
+  public String getName() {
+    return Strings.isNullOrEmpty(name) ? DEFAULT : name;
   }
 
   @Override

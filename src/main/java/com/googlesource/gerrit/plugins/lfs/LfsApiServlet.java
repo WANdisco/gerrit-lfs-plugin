@@ -112,7 +112,9 @@ public class LfsApiServlet extends LfsGerritProtocolServlet {
         }
       }
 
-      return repoResolver.get(project, config.getBackend());
+      LargeFileRepository largeFileRepository = repoResolver.get(project, config.getBackend());
+      largeFileRepository.setProjectName(projName);
+      return largeFileRepository;
     }
 
     throw new LfsUnavailable(project.get());

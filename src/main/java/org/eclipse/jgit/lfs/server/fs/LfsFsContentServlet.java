@@ -20,9 +20,15 @@ import static com.googlesource.gerrit.plugins.lfs.fs.LocalLargeFileRepository.DO
 import static com.googlesource.gerrit.plugins.lfs.fs.LocalLargeFileRepository.UPLOAD;
 import static org.eclipse.jgit.util.HttpSupport.HDR_AUTHORIZATION;
 
+import com.google.gson.FieldNamingPolicy;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
 
+import org.eclipse.jgit.lfs.errors.GitMSException;
+import com.googlesource.gerrit.plugins.lfs.ContentDeliveryObjectUploader;
+import com.googlesource.gerrit.plugins.lfs.ReplicationUtils;
 import com.googlesource.gerrit.plugins.lfs.fs.LfsFsRequestAuthorizer;
 import com.googlesource.gerrit.plugins.lfs.fs.LocalLargeFileRepository;
 
@@ -32,8 +38,13 @@ import org.eclipse.jgit.lfs.lib.AnyLongObjectId;
 import org.eclipse.jgit.lfs.lib.Constants;
 import org.eclipse.jgit.lfs.lib.LongObjectId;
 import org.eclipse.jgit.lfs.server.internal.LfsServerText;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.text.MessageFormat;
 
 import javax.servlet.AsyncContext;
@@ -51,19 +62,25 @@ public class LfsFsContentServlet extends FileLfsServlet {
   private final LfsFsRequestAuthorizer authorizer;
   private final LocalLargeFileRepository repository;
   private final long timeout;
+  private static Gson gson = createGson();
+
+  Logger log = LoggerFactory.getLogger(LfsFsContentServlet.class);
 
   @Inject
   public LfsFsContentServlet(LfsFsRequestAuthorizer authorizer,
-      @Assisted LocalLargeFileRepository repository) {
+                             @Assisted LocalLargeFileRepository repository) {
     super(repository, 0);
     this.authorizer = authorizer;
     this.repository = repository;
     this.timeout = 0;
   }
 
+
   @Override
   protected void doGet(HttpServletRequest req, HttpServletResponse rsp)
       throws ServletException, IOException {
+
+
     AnyLongObjectId obj = getObjectToTransfer(req, rsp);
     if (obj == null) {
       return;
@@ -88,6 +105,16 @@ public class LfsFsContentServlet extends FileLfsServlet {
         new ObjectDownloadListener(repository, context, rsp, obj));
   }
 
+  /**
+   * Servlet doPut, the request to upload the object is intercepted and the object
+   * is placed in the content delivery directory of GitMS. Following this, GitMS
+   * replicates the objects to the other node replicas. Previously the doPut upload
+   * was asynchronous but now performs the uploads in a synchronous fashion.
+   * @param req
+   * @param rsp
+   * @throws ServletException
+   * @throws IOException
+   */
   @Override
   protected void doPut(HttpServletRequest req, HttpServletResponse rsp)
       throws ServletException, IOException {
@@ -104,14 +131,79 @@ public class LfsFsContentServlet extends FileLfsServlet {
       return;
     }
 
-    AsyncContext context = req.startAsync();
-    context.setTimeout(timeout);
-    req.getInputStream().setReadListener(
-        new ObjectUploadListener(repository, context, req, rsp, id));
+    /* The path to GitMS content delivery which is passed to the ContentDeliveryObjectUploader
+     * so It has somewhere to write the byte stream to disk.
+     */
+    String gitRepo = repository.getProjectName();
+    final Path contentDeliveryPath = Paths.get(ReplicationUtils.parseForProperty("content.location") + "/" +
+        ReplicationUtils.getCDRepoNameSpace(gitRepo) + "/" + id.getName());
+    /*
+     * Writes the LFS object to the specified path on disk, in this case the path specified
+     * is the content delivery location in GitMS. Once the disk write is completed the
+     * channels will be closed as the class implements AutoClosable. If there is a failure and content is only
+     * partially written then we need to clean up.
+     */
+    try(ContentDeliveryObjectUploader contentUploader =
+            new ContentDeliveryObjectUploader(contentDeliveryPath, req.getInputStream(), id)) {
+      contentUploader.onDataAvailable();
+    } catch (IOException e){
+        log.error("Failed to fully write LFS object to the " +
+            "content delivery folder of GitMS, deleting any partially written content");
+        contentDeliveryPath.toFile().delete();
+    }
+
+    /*
+     * Making the request to GitMS to replicate the object. If there is an error on the GitMS side then
+     * the response will be passed back to the client via the sendError method.
+     */
+
+    try {
+        log.info("Making request to GitMS to replicate the LFS Object");
+        ReplicationUtils.replicateLfsData(repository.getBackend().getName(),
+            contentDeliveryPath.toFile(), repository.getProjectName(), id);
+    } catch (GitMSException e) {
+      sendError(rsp, HttpStatus.SC_INTERNAL_SERVER_ERROR, e.getMessage());
+    }
+  }
+
+  /*
+  * This method serialises the JSON response and ensure that the response is written to the stream
+  * with a content type as application/json.
+  */
+  static void sendError(HttpServletResponse rsp, int status, String message) throws IOException {
+    rsp.setContentType("application/json");
+    rsp.setStatus(status);
+    PrintWriter writer = rsp.getWriter();
+    gson.toJson(new FileLfsServlet.Error(message), writer);
+    writer.flush();
+    writer.close();
+    rsp.flushBuffer();
+  }
+
+  /*
+   * Using GsonBuilder because configuration options are required other than the default.
+   * setFieldNamingPolicy, configures Gson to apply a specific naming policy to an
+   * object's field during serialization and deserialization.
+   */
+  private static Gson createGson() {
+    GsonBuilder gb = (new GsonBuilder())
+        .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).setPrettyPrinting().disableHtmlEscaping();
+    return gb.create();
+  }
+
+  /*
+   * Error object passed to the gson.toJson methods appendable writer,
+   * contains the error message for the client.
+   */
+  static class Error {
+    String message;
+    Error(String m) {
+      this.message = m;
+    }
   }
 
   private AnyLongObjectId getObjectToTransfer(HttpServletRequest req,
-      HttpServletResponse rsp) throws IOException {
+                                              HttpServletResponse rsp) throws IOException {
     String info = req.getPathInfo();
     if (info.length() != 1 + Constants.LONG_OBJECT_ID_STRING_LENGTH) {
       sendError(rsp, HttpStatus.SC_UNPROCESSABLE_ENTITY,

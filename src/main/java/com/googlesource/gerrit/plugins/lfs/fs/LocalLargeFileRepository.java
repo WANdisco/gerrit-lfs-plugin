@@ -50,6 +50,7 @@ public class LocalLargeFileRepository extends FileLfsRepository {
   private final String servletUrlPattern;
   private final LfsFsRequestAuthorizer authorizer;
   private final int expirationSeconds;
+  private final LfsBackend backend;
 
   @Inject
   LocalLargeFileRepository(LfsConfigurationFactory configFactory,
@@ -62,6 +63,9 @@ public class LocalLargeFileRepository extends FileLfsRepository {
             backend, defaultDataDir));
     this.authorizer = authorizer;
     this.servletUrlPattern = "/" + getContentPath(backend) + "*";
+
+    this.backend = backend;
+
     this.expirationSeconds = configFactory.getGlobalConfig()
         .getInt(backend.type.name(), backend.name, "expirationSeconds",
             DEFAULT_TIMEOUT);
@@ -69,6 +73,10 @@ public class LocalLargeFileRepository extends FileLfsRepository {
 
   public String getServletUrlPattern() {
     return servletUrlPattern;
+  }
+
+  public LfsBackend getBackend() {
+    return backend;
   }
 
   @Override
