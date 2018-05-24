@@ -126,7 +126,8 @@ public class ReplicationUtils {
    * @throws IOException
    * @throws GitMSException
    */
-  public static void replicateLfsData(final String dataNamespace, File contentDeliveryPath, String projectName, AnyLongObjectId objectId)
+  public static void replicateLfsData(final String dataNamespace, File contentDeliveryPath,
+                                      String projectName, AnyLongObjectId objectId)
       throws IOException, GitMSException {
     String [] gitmsConfig = parseGitMSConfig();
     String localJettyPort = null;
@@ -140,10 +141,11 @@ public class ReplicationUtils {
       LfsReplicatedRequestBuilder lfsRequestBuilder = null;
       try {
         lfsRequestBuilder = new LfsReplicatedRequestBuilder(localJettyHost, localJettyPort)
-            .setProjectName(projectName)
+            .setProjectName(getRepoWithoutSuffix(projectName))
             .setLfsObjectOID(objectId.getName())
             .setLfsDataDir(dataNamespace)
             .setLfsObjectSize(contentDeliveryPath.length())
+            .setLfsContentDeliveryPath(contentDeliveryPath.getName())
             .setRequestURI().setHttpConnection().buildRequest();
 
         int response = lfsRequestBuilder.getHttpResponseCode();
@@ -172,6 +174,17 @@ public class ReplicationUtils {
       }
     }
   }
+
+  /**
+   * Returns the repository name witout the .git suffix
+   * i.e repo01.git becomes repo01
+   * @param projectName
+   * @return
+   */
+  public static String getRepoWithoutSuffix(String projectName) {
+    return projectName.replace(".git", "");
+  }
+
 
   /**
    * Determine where the repository namespace is for the given repository in content delivery.

@@ -29,10 +29,10 @@ public class ContentDeliveryObjectUploader implements ReadListener, AutoCloseabl
   private WritableByteChannel channel;
   private final ByteBuffer buffer = ByteBuffer.allocateDirect(8192);
 
-  public ContentDeliveryObjectUploader(Path path, InputStream inputStream, AnyLongObjectId id) throws IOException {
+  public ContentDeliveryObjectUploader(Path path, InputStream inputStream) throws IOException {
     this.in = inputStream;
     this.inChannel = Channels.newChannel(this.in);
-    this.out = getOutputStream(path, id);
+    this.out = getOutputStream(path);
     this.channel = Channels.newChannel(this.out);
   }
 
@@ -63,12 +63,12 @@ public class ContentDeliveryObjectUploader implements ReadListener, AutoCloseabl
    * Creates the directory and returns a new AtomicObjectOutputStream using the content delivery path
    * and the LFS object OID
    */
-  public AtomicObjectOutputStream getOutputStream(Path path, AnyLongObjectId id) throws IOException {
+  public AtomicObjectOutputStream getOutputStream(Path path) throws IOException {
     Path parent = path.getParent();
     if(parent != null) {
       Files.createDirectories(parent, new FileAttribute[0]);
     }
-    return new AtomicObjectOutputStream(path, id);
+    return new AtomicObjectOutputStream(path);
   }
 
   public void onAllDataRead() throws IOException {

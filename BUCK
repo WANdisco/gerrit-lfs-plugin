@@ -30,7 +30,7 @@ gerrit_plugin(
 maven_jar(
   name = 'jgit-http-apache',
   id = 'org.eclipse.jgit:org.eclipse.jgit.http.apache:' + JGIT_VERSION_WD,
-  sha1 = '5511508590400743cc649ee710f61bb9c8a9c637',
+  sha1 = '2cf7c5550b3c8657a2e3f9aa986044fc8f6184f1',
   license = 'jgit',
   repository = REPO_WD,
   unsign = True,
@@ -43,8 +43,8 @@ maven_jar(
 maven_jar(
   name = 'jgit-lfs',
   id = 'org.eclipse.jgit:org.eclipse.jgit.lfs:' + JGIT_VERSION_WD,
-  bin_sha1 = '6b7a1405f689a7c67b2fdbd72ad625c84740be80',
-  src_sha1 = 'c266dc25384dcc6b236bc4a4464da0d19eb8d68e',
+  bin_sha1 = '4789809c69c697e9bf4163e81ca2d67bb59737e2',
+  src_sha1 = '48513511d0f6997263fd35d229dd71bc8f06cdda',
   license = 'jgit',
   repository = REPO_WD,
   unsign = True,
@@ -57,8 +57,8 @@ maven_jar(
 maven_jar(
   name = 'jgit-lfs-server',
   id = 'org.eclipse.jgit:org.eclipse.jgit.lfs.server:' + JGIT_VERSION_WD,
-  bin_sha1 = '5cc3497eb5823c2f2b37a79e698219759aacf192',
-  src_sha1 = '1f4cd9eaf02a2efd91c76fff51d721f943be4539',
+  bin_sha1 = '35459d60efd04c1f0faa1a4816ca0690116f44e3',
+  src_sha1 = '6896afe609e8a2d2f4e90847b64df62d5facddf5',
   license = 'jgit',
   repository = REPO_WD,
   unsign = True,

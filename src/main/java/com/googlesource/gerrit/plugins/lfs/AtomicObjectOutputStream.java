@@ -16,12 +16,10 @@ class AtomicObjectOutputStream extends OutputStream {
   private LockFile locked;
   private DigestOutputStream out;
   private boolean aborted;
-  private AnyLongObjectId id;
 
-  AtomicObjectOutputStream(Path path, AnyLongObjectId id) throws IOException {
+  AtomicObjectOutputStream(Path path) throws IOException {
     this.locked = new LockFile(path.toFile());
     this.locked.lock();
-    this.id = id;
     this.out = new DigestOutputStream(this.locked.getOutputStream(), Constants.newMessageDigest());
   }
 
@@ -40,16 +38,7 @@ class AtomicObjectOutputStream extends OutputStream {
   public void close() throws IOException {
     this.out.close();
     if(!this.aborted) {
-      this.verifyHash();
       this.locked.commit();
-    }
-  }
-
-  private void verifyHash() {
-    AnyLongObjectId contentHash = LongObjectId.fromRaw(this.out.getMessageDigest().digest());
-    if(!contentHash.equals(this.id)) {
-      this.abort();
-      throw new CorruptLongObjectException(this.id, contentHash, MessageFormat.format(LfsServerText.get().corruptLongObject, new Object[]{contentHash, this.id}));
     }
   }
 

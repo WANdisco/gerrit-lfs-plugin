@@ -43,9 +43,11 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.MessageFormat;
+import java.util.UUID;
 
 import javax.servlet.AsyncContext;
 import javax.servlet.ServletException;
@@ -78,7 +80,7 @@ public class LfsFsContentServlet extends FileLfsServlet {
 
   @Override
   protected void doGet(HttpServletRequest req, HttpServletResponse rsp)
-      throws ServletException, IOException {
+      throws IOException {
 
 
     AnyLongObjectId obj = getObjectToTransfer(req, rsp);
@@ -117,7 +119,7 @@ public class LfsFsContentServlet extends FileLfsServlet {
    */
   @Override
   protected void doPut(HttpServletRequest req, HttpServletResponse rsp)
-      throws ServletException, IOException {
+      throws IOException {
     AnyLongObjectId id = getObjectToTransfer(req, rsp);
     if (id == null) {
       return;
@@ -135,8 +137,10 @@ public class LfsFsContentServlet extends FileLfsServlet {
      * so It has somewhere to write the byte stream to disk.
      */
     String gitRepo = repository.getProjectName();
+    UUID lfsUuid = getUuid(id.toString());
+    String cdTmpFile = lfsUuid + "_" + id.getName() + ".lfsdata";
     final Path contentDeliveryPath = Paths.get(ReplicationUtils.parseForProperty("content.location") + "/" +
-        ReplicationUtils.getCDRepoNameSpace(gitRepo) + "/" + id.getName());
+        ReplicationUtils.getCDRepoNameSpace(gitRepo) + "/" + cdTmpFile);
     /*
      * Writes the LFS object to the specified path on disk, in this case the path specified
      * is the content delivery location in GitMS. Once the disk write is completed the
@@ -144,7 +148,7 @@ public class LfsFsContentServlet extends FileLfsServlet {
      * partially written then we need to clean up.
      */
     try(ContentDeliveryObjectUploader contentUploader =
-            new ContentDeliveryObjectUploader(contentDeliveryPath, req.getInputStream(), id)) {
+            new ContentDeliveryObjectUploader(contentDeliveryPath, req.getInputStream())) {
       contentUploader.onDataAvailable();
     } catch (IOException e){
         log.error("Failed to fully write LFS object to the " +
@@ -159,11 +163,23 @@ public class LfsFsContentServlet extends FileLfsServlet {
 
     try {
         log.info("Making request to GitMS to replicate the LFS Object");
-        ReplicationUtils.replicateLfsData(repository.getBackend().getName(),
-            contentDeliveryPath.toFile(), repository.getProjectName(), id);
-    } catch (GitMSException e) {
+        ReplicationUtils.replicateLfsData(repository.getBackend().getName(),contentDeliveryPath.toFile(),
+            repository.getProjectName(), id);
+    } catch (GitMSException | IOException e) {
       sendError(rsp, HttpStatus.SC_INTERNAL_SERVER_ERROR, e.getMessage());
     }
+  }
+
+  /**
+   * Get the unique file identifier for the LFS object
+   * The unique identifier will be a UUID eg. 067e6162-3b6f-4ae2-a171-2470b63dff00
+   * @param lfsFileObject
+   * @return
+   * @throws UnsupportedEncodingException
+   */
+  private UUID getUuid(String lfsFileObject) throws UnsupportedEncodingException {
+    byte[] bytes = lfsFileObject.getBytes("UTF-8");
+    return UUID.nameUUIDFromBytes(bytes);
   }
 
   /*
