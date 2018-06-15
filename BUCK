@@ -7,7 +7,7 @@ REPO_WD = 'http://artifacts.wandisco.com/artifactory/libs-release-local'
 JGIT_VERSION_WD = '4.5.2.201704071617-r_WDv3_Test'
 
 gerrit_plugin(
-  name = 'gerrit-lfs-plugin',
+  name = 'lfs',
   srcs = glob(['src/main/java/**/*.java']),
   resources = glob(['src/main/resources/**/*']),
   deps = [
