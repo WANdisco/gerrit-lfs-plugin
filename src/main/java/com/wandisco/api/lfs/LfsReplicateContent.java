@@ -10,7 +10,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 
 import static com.wandisco.gerrit.gitms.shared.util.ReplicationUtils.getRepoWithoutSuffix;
-import static org.eclipse.jgit.lfs.server.fs.FileLfsRepository.parseGitMSConfig;
 
 public class LfsReplicateContent {
 
