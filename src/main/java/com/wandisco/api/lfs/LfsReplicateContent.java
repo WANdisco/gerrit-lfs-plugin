@@ -29,13 +29,11 @@ public class LfsReplicateContent {
 
     // TODO Use the new 4001 authenticated port.
     // Add auth information
-    String [] gitmsConfig = parseGitMSConfig();
-    String localJettyPort = null;
+    // GitMsConfiguration xxx = parseGitMSConfig();
+    String localJettyPort = "4001";
     final String localJettyHost = "127.0.0.1";
 
-    if(gitmsConfig != null || gitmsConfig.length > 0) {
-      localJettyPort = gitmsConfig[0];
-    }
+// if requesting this method, we need to have a jetty port configurated if not, its invalid configuration.
 
     if (localJettyPort != null && !localJettyPort.isEmpty()) {
       LfsReplicatedRequestBuilder lfsRequestBuilder = null;
