@@ -18,6 +18,7 @@ package org.eclipse.jgit.lfs.server.fs;
 
 import static com.googlesource.gerrit.plugins.lfs.fs.LocalLargeFileRepository.DOWNLOAD;
 import static com.googlesource.gerrit.plugins.lfs.fs.LocalLargeFileRepository.UPLOAD;
+import static com.wandisco.api.lfs.LfsReplicateContent.replicateLfsData;
 import static org.eclipse.jgit.util.HttpSupport.HDR_AUTHORIZATION;
 
 import com.google.gson.FieldNamingPolicy;
@@ -26,9 +27,9 @@ import com.google.gson.GsonBuilder;
 import com.google.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
 
+import com.wandisco.gerrit.gitms.shared.util.ReplicationUtils;
 import org.eclipse.jgit.lfs.errors.GitMSException;
 import com.googlesource.gerrit.plugins.lfs.ContentDeliveryObjectUploader;
-import com.googlesource.gerrit.plugins.lfs.ReplicationUtils;
 import com.googlesource.gerrit.plugins.lfs.fs.LfsFsRequestAuthorizer;
 import com.googlesource.gerrit.plugins.lfs.fs.LocalLargeFileRepository;
 
@@ -163,7 +164,7 @@ public class LfsFsContentServlet extends FileLfsServlet {
 
     try {
         log.info("Making request to GitMS to replicate the LFS Object");
-        ReplicationUtils.replicateLfsData(repository.getBackend().getName(),contentDeliveryPath.toFile(),
+        replicateLfsData(repository.getBackend().getName(),contentDeliveryPath.toFile(),
             repository.getProjectName(), id);
     } catch (GitMSException | IOException e) {
       sendError(rsp, HttpStatus.SC_INTERNAL_SERVER_ERROR, e.getMessage());

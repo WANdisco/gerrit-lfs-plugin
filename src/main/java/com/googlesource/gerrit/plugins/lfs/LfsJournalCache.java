@@ -15,8 +15,7 @@ import java.nio.file.Paths;
 import java.security.InvalidParameterException;
 import java.util.List;
 
-//TODO, in memory cache???, locking / serialization, best format on disk, cross process in memory or cache sharing for performance?
-//TODO, look into a MemoryMapped file which uses MappedByteBuffer to write data to our file using memory mapped IO
+//TODO, in memory cache, with RESTApi requests for info.
 
 public class LfsJournalCache<K, V> {
 

@@ -1,9 +1,9 @@
 include_defs('//bucklets/gerrit_plugin.bucklet')
 include_defs('//bucklets/maven_jar.bucklet')
+include_defs('//lib/WD_REPOSITORY')
 
 JGIT_VERSION = '4.5.0.201609210915-r'
 REPO = MAVEN_CENTRAL
-REPO_WD = 'http://artifacts.wandisco.com/artifactory/libs-release-local'
 JGIT_VERSION_WD = '4.5.2.201704071617-r_WDv3_Test'
 
 gerrit_plugin(
@@ -14,9 +14,10 @@ gerrit_plugin(
     ':jgit-http-apache',
     ':jgit-lfs',
     ':jgit-lfs-server',
+    '//lib/wandisco:gerrit.gitms.shared'
   ],
   provided_deps = [
-    '//lib/httpcomponents:httpcore',
+    '//lib/httpcomponents:httpcore'
   ],
   manifest_entries = [
     'Gerrit-PluginName: lfs',

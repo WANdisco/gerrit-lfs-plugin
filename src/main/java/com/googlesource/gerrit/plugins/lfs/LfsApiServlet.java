@@ -16,6 +16,7 @@ package com.googlesource.gerrit.plugins.lfs;
 
 import static com.google.gerrit.extensions.client.ProjectState.HIDDEN;
 import static com.google.gerrit.extensions.client.ProjectState.READ_ONLY;
+import static com.google.gerrit.httpd.LfsProjectParser.parseProjectFromPath;
 import static com.google.gerrit.httpd.plugins.LfsPluginServlet.URL_REGEX;
 
 import com.google.common.base.Strings;
@@ -38,8 +39,9 @@ import org.eclipse.jgit.lfs.errors.LfsValidationError;
 import org.eclipse.jgit.lfs.server.LargeFileRepository;
 import org.eclipse.jgit.lfs.server.LfsGerritProtocolServlet;
 import org.eclipse.jgit.lfs.server.LfsObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Singleton
@@ -53,6 +55,7 @@ public class LfsApiServlet extends LfsGerritProtocolServlet {
   private final LfsConfigurationFactory lfsConfigFactory;
   private final LfsRepositoryResolver repoResolver;
   private final LfsAuthUserProvider userProvider;
+  private static final Logger logger = LoggerFactory.getLogger(LfsApiServlet.class);
 
   @Inject
   LfsApiServlet(ProjectCache projectCache,
@@ -69,28 +72,29 @@ public class LfsApiServlet extends LfsGerritProtocolServlet {
   protected LargeFileRepository getLargeFileRepository(
       LfsRequest request, String path, String auth)
           throws LfsException {
-    String pathInfo = path.startsWith("/") ? path : "/" + path;
-    Matcher matcher = URL_PATTERN.matcher(pathInfo);
-    if (!matcher.matches()) {
-      throw new LfsException("no repository at " + pathInfo);
+
+    String projName = null;
+    Project.NameKey project = null;
+    try {
+      projName = parseProjectFromPath(path);
+      project = Project.NameKey.parse(ProjectUtil.stripGitSuffix(projName));
+
+    } catch (Exception e) {
+      logger.error("Repository requested wasn't found for path: " + path);
+      throw new LfsRepositoryNotFound(projName == null ? path : projName);
     }
-    String projName = matcher.group(1);
-    Project.NameKey project = Project.NameKey.parse(
-        ProjectUtil.stripGitSuffix(projName));
+
     ProjectState state = projectCache.get(project);
     if (state == null || state.getProject().getState() == HIDDEN) {
       throw new LfsRepositoryNotFound(project.get());
     }
-    authorizeUser(userProvider.getUser(auth, projName, request.getOperation()),
-        state, request.getOperation());
+    authorizeUser(userProvider.getUser(auth, projName, request.getOperation()), state, request.getOperation());
 
-    if (request.getOperation().equals(UPLOAD)
-        && state.getProject().getState() == READ_ONLY) {
+    if (request.getOperation().equals(UPLOAD) && state.getProject().getState() == READ_ONLY) {
       throw new LfsRepositoryReadOnly(project.get());
     }
 
-    LfsProjectConfigSection config =
-        lfsConfigFactory.getProjectsConfig().getForProject(project);
+    LfsProjectConfigSection config = lfsConfigFactory.getProjectsConfig().getForProject(project);
     // Only accept requests for projects where LFS is enabled.
     // No config means we default to "not enabled".
     if (config != null && config.isEnabled()) {
@@ -104,17 +108,18 @@ public class LfsApiServlet extends LfsGerritProtocolServlet {
         if (maxObjectSize > 0) {
           for (LfsObject object : request.getObjects()) {
             if (object.getSize() > maxObjectSize) {
-              throw new LfsValidationError(String.format(
-                  "size of object %s (%d bytes) exceeds limit (%d bytes)",
-                  object.getOid(), object.getSize(), maxObjectSize));
+              throw new LfsValidationError(
+                  String.format("size of object %s (%d bytes) exceeds limit (%d bytes)", object.getOid(), object.getSize(), maxObjectSize));
             }
           }
         }
       }
 
-      LargeFileRepository largeFileRepository = repoResolver.get(project, config.getBackend());
-      largeFileRepository.setProjectName(projName);
-      return largeFileRepository;
+      LargeFileRepository repo = repoResolver.get(project, config.getBackend());
+
+      // TODO Make sure to update the replication information on a project with what we can for replication.
+      //repo.setReplicationInfo( repInfo );
+      return repo;
     }
 
     throw new LfsUnavailable(project.get());
