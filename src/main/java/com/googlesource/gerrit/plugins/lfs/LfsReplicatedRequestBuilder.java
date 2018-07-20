@@ -2,9 +2,6 @@ package com.googlesource.gerrit.plugins.lfs;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
 
 /**
  * Builder style class to allow HTTP requests to be built up and sent to GitMS from gerrit.
@@ -12,123 +9,81 @@ import java.net.URL;
  */
 public class LfsReplicatedRequestBuilder {
 
-  private String host;
-  private String port;
-  private final String lfsEndpoint = "/gerrit/lfs";
-  private URL url;
-  private HttpURLConnection httpURLConnection;
-  private String lfsObjectOID;
-  private String lfsObjectSize;
-  private String projectName;
-  private String lfsDataDir;
-  private String lfsContentDeliveryFile;
+  private final String lfsEndpoint = "/gerrit/lfs-content";
+  private final HttpRequestBuilder requestBuilder;
 
-  public LfsReplicatedRequestBuilder(final String host, final String port) {
-    this.host = host;
-    this.port = port;
-  }
 
-  public LfsReplicatedRequestBuilder setProjectName(final String projectName){
-    this.projectName = "projectName=" + projectName;
-    return this;
-  }
-
-  public LfsReplicatedRequestBuilder setLfsDataDir(final String lfsDataDir){
-    this.lfsDataDir = "lfsDataDir=" + lfsDataDir;
-    return this;
-  }
-
-  public LfsReplicatedRequestBuilder setLfsObjectOID(final String lfsObjectOID){
-    this.lfsObjectOID = "lfsObjectOID=" + lfsObjectOID;
-    return this;
-  }
-
-  public LfsReplicatedRequestBuilder setLfsObjectSize(final long lfsObjectSize){
-    this.lfsObjectSize = "lfsObjectSize=" + lfsObjectSize;
-    return this;
-  }
-
-  public LfsReplicatedRequestBuilder setLfsContentDeliveryPath(final String lfsContentDeliveryFile){
-    this.lfsContentDeliveryFile = "lfsContentDeliveryFile=" + lfsContentDeliveryFile;
-    return this;
-  }
 
   /**
-   * Building the URL with the lfs request
-   * information to send to GitMS /lfs endpoint
-   * @return
+   * @param host                   rest api endpoint host ( authenticated )
+   * @param port                   rest api endpoint port
+   * @param projectName            LFS project name where content is to be added to.
+   * @param objectId               LFS Object unique ID.
+   * @param objectSize             LFS Object file size.
+   * @param lfsDataDir             LFS Object final Data storage location on disk ( Backend ).
+   * @param lfsContentDeliveryFile LFS Temporary file name while in Content Delivery.
    */
-  public LfsReplicatedRequestBuilder setRequestURI(){
-    try {
-      String requestData = this.lfsEndpoint
-          + "?" + this.lfsDataDir
-          + "&" + this.projectName
-          + "&" + this.lfsObjectOID
-          + "&" + this.lfsObjectSize
-          + "&" + this.lfsContentDeliveryFile;
-      this.url = new URL("http", host, Integer.parseInt(port), requestData);
-    } catch (MalformedURLException e) {
-      e.printStackTrace();
-    }
-    return this;
+  public LfsReplicatedRequestBuilder(final String host, final int port, final String projectName, final String objectId,
+      final long objectSize, final String lfsDataDir, final String lfsContentDeliveryFile) throws IOException {
+
+    requestBuilder = new HttpRequestBuilder(host, port, lfsEndpoint);
+
+    // Set our default request type and accept response type.
+    requestBuilder.setRequestParameter("Content-Type", "application/json");
+    requestBuilder.setRequestParameter("Accept", "application/json; charset=utf-8;");
+
+    // now request specific info.
+    requestBuilder.setRequestParameter("projectName", projectName);
+    requestBuilder.setRequestParameter("lfsObjectOID", objectId);
+    requestBuilder.setRequestParameter("lfsObjectSize", Long.toString(objectSize));
+    requestBuilder.setRequestParameter("lfsDataDir", lfsDataDir);
+    requestBuilder.setRequestParameter("lfsContentDeliveryFile", lfsContentDeliveryFile);
+
+    // build the entire request ready for issuing.
+    requestBuilder.buildRequest();
   }
 
-  /**
-   * Open the connection and set the request properties.
-   * @return
-   * @throws IOException
-   */
-  public LfsReplicatedRequestBuilder setHttpConnection() throws IOException {
-    this.httpURLConnection = (HttpURLConnection) this.url.openConnection();
-    httpURLConnection.setDoOutput(true);
-    httpURLConnection.setDoInput(true);
-    httpURLConnection.setUseCaches(false);
-    httpURLConnection.setRequestMethod("PUT");
-    httpURLConnection.setRequestProperty("Content-Type", "application/xml");
-    httpURLConnection.setRequestProperty("Accept", "application/json; charset=utf-8;");
-    return this;
-  }
 
-  /**
-   *
-   * @return
-   */
-  public URL getUrl() {
-    return url;
-  }
 
   /**
    * Gets the status code from an HTTP response message.
+   *
+   * @return
+   * @throws Exception
+   */
+  public int getHttpResponseCode() throws Exception {
+    return requestBuilder.getHttpResponseCode();
+  }
+
+  /**
+   * Gets the response text from the HTTP Response message, either
+   * from the input stream for success or the error stream for failures.
+   *
    * @return
    * @throws IOException
    */
-  public int getHttpResponseCode() throws IOException {
-    return this.httpURLConnection.getResponseCode();
+  public String getHttpResponseMessage() throws IOException {
+    return requestBuilder.getHttpResponseMessage();
   }
 
   /**
    * Returns the error stream if the connection failed.
+   *
    * @return
    * @throws IOException
    */
   public InputStream getHttpErrorStream() throws IOException {
-    return this.httpURLConnection.getErrorStream();
+    return requestBuilder.getHttpErrorStream();
   }
 
   /**
    * Releases the connection.
    */
-  public void disconnect(){
-    if(httpURLConnection!= null) {
-      this.httpURLConnection.disconnect();
+  public void disconnect() {
+    if (requestBuilder != null) {
+      requestBuilder.disconnect();
     }
   }
 
-  /**
-   * Return the LfsReplicatedRequestBuilder object
-   * @return
-   */
-  public LfsReplicatedRequestBuilder buildRequest() {
-    return this;
-  }
+
 }
