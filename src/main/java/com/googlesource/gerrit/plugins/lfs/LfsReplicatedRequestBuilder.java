@@ -1,5 +1,7 @@
 package com.googlesource.gerrit.plugins.lfs;
 
+import com.wandisco.gerrit.gitms.shared.util.HttpRequestBuilder;
+
 import java.io.IOException;
 import java.io.InputStream;
 

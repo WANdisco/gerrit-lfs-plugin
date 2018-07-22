@@ -16,24 +16,17 @@ package org.eclipse.jgit.lfs.server.fs;
 // TODO move file back to com.googlesource.gerrit.plugin.lfs.fs package when
 // https://git.eclipse.org/r/#/c/84933/ is picked up by gerrit
 
-import static com.googlesource.gerrit.plugins.lfs.fs.LocalLargeFileRepository.DOWNLOAD;
-import static com.googlesource.gerrit.plugins.lfs.fs.LocalLargeFileRepository.UPLOAD;
-import static com.wandisco.api.lfs.LfsReplicateContent.replicateLfsData;
-import static org.eclipse.jgit.util.HttpSupport.HDR_AUTHORIZATION;
-
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
-
-import com.wandisco.gerrit.gitms.shared.util.ReplicationUtils;
-import org.eclipse.jgit.lfs.errors.GitMSException;
 import com.googlesource.gerrit.plugins.lfs.ContentDeliveryObjectUploader;
 import com.googlesource.gerrit.plugins.lfs.fs.LfsFsRequestAuthorizer;
 import com.googlesource.gerrit.plugins.lfs.fs.LocalLargeFileRepository;
-
+import com.wandisco.gerrit.gitms.shared.util.ReplicationUtils;
 import org.apache.http.HttpStatus;
+import org.eclipse.jgit.lfs.errors.GitMSException;
 import org.eclipse.jgit.lfs.errors.InvalidLongObjectIdException;
 import org.eclipse.jgit.lfs.lib.AnyLongObjectId;
 import org.eclipse.jgit.lfs.lib.Constants;
@@ -42,6 +35,10 @@ import org.eclipse.jgit.lfs.server.internal.LfsServerText;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.servlet.AsyncContext;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
@@ -50,10 +47,10 @@ import java.nio.file.Paths;
 import java.text.MessageFormat;
 import java.util.UUID;
 
-import javax.servlet.AsyncContext;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import static com.googlesource.gerrit.plugins.lfs.fs.LocalLargeFileRepository.DOWNLOAD;
+import static com.googlesource.gerrit.plugins.lfs.fs.LocalLargeFileRepository.UPLOAD;
+import static com.wandisco.api.lfs.LfsReplicateContent.replicateLfsData;
+import static org.eclipse.jgit.util.HttpSupport.HDR_AUTHORIZATION;
 
 public class LfsFsContentServlet extends FileLfsServlet {
   public interface Factory {
@@ -167,6 +164,8 @@ public class LfsFsContentServlet extends FileLfsServlet {
         replicateLfsData(repository.getBackend().getName(),contentDeliveryPath.toFile(),
             repository.getProjectName(), id);
     } catch (GitMSException | IOException e) {
+      sendError(rsp, HttpStatus.SC_INTERNAL_SERVER_ERROR, e.getMessage());
+    } catch (Exception e) {
       sendError(rsp, HttpStatus.SC_INTERNAL_SERVER_ERROR, e.getMessage());
     }
   }
