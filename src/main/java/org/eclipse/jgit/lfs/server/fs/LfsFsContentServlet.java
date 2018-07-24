@@ -16,6 +16,7 @@ package org.eclipse.jgit.lfs.server.fs;
 // TODO move file back to com.googlesource.gerrit.plugin.lfs.fs package when
 // https://git.eclipse.org/r/#/c/84933/ is picked up by gerrit
 
+import com.google.common.base.Strings;
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -135,6 +136,14 @@ public class LfsFsContentServlet extends FileLfsServlet {
      * so It has somewhere to write the byte stream to disk.
      */
     String gitRepo = repository.getProjectName();
+
+    // validate that the repository has replication info on it, or we should be in here.
+    // This is a WD version of this method and it should have used getLargeFileRepository which sets this obj up.
+    if (Strings.isNullOrEmpty(gitRepo)) {
+      sendError(rsp, HttpStatus.SC_INTERNAL_SERVER_ERROR, "Missing LFS project name, when uploading content.");
+      return;
+    }
+
     UUID lfsUuid = getUuid(id.toString());
     String cdTmpFile = lfsUuid + "_" + id.getName() + ".lfsdata";
     final Path contentDeliveryPath = Paths.get(ReplicationUtils.parseForProperty("content.location") + "/" +

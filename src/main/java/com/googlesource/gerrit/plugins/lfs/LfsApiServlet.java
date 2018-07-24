@@ -14,11 +14,6 @@
 
 package com.googlesource.gerrit.plugins.lfs;
 
-import static com.google.gerrit.extensions.client.ProjectState.HIDDEN;
-import static com.google.gerrit.extensions.client.ProjectState.READ_ONLY;
-import static com.google.gerrit.httpd.LfsProjectParser.parseProjectFromPath;
-import static com.google.gerrit.httpd.plugins.LfsPluginServlet.URL_REGEX;
-
 import com.google.common.base.Strings;
 import com.google.gerrit.common.ProjectUtil;
 import com.google.gerrit.common.data.Capable;
@@ -29,20 +24,20 @@ import com.google.gerrit.server.project.ProjectControl;
 import com.google.gerrit.server.project.ProjectState;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-
-import org.eclipse.jgit.lfs.errors.LfsException;
-import org.eclipse.jgit.lfs.errors.LfsRepositoryNotFound;
-import org.eclipse.jgit.lfs.errors.LfsRepositoryReadOnly;
-import org.eclipse.jgit.lfs.errors.LfsUnauthorized;
-import org.eclipse.jgit.lfs.errors.LfsUnavailable;
-import org.eclipse.jgit.lfs.errors.LfsValidationError;
+import org.eclipse.jgit.lfs.errors.*;
 import org.eclipse.jgit.lfs.server.LargeFileRepository;
 import org.eclipse.jgit.lfs.server.LfsGerritProtocolServlet;
 import org.eclipse.jgit.lfs.server.LfsObject;
+import org.eclipse.jgit.lfs.server.ReplicationInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.regex.Pattern;
+
+import static com.google.gerrit.extensions.client.ProjectState.HIDDEN;
+import static com.google.gerrit.extensions.client.ProjectState.READ_ONLY;
+import static com.google.gerrit.httpd.LfsProjectParser.parseProjectFromPath;
+import static com.google.gerrit.httpd.plugins.LfsPluginServlet.URL_REGEX;
 
 @Singleton
 public class LfsApiServlet extends LfsGerritProtocolServlet {
@@ -116,9 +111,17 @@ public class LfsApiServlet extends LfsGerritProtocolServlet {
       }
 
       LargeFileRepository repo = repoResolver.get(project, config.getBackend());
+      ReplicationInfo replicationInfo = new ReplicationInfo();
+      replicationInfo.isReplica = true;
+      replicationInfo.repositoryName = projName;
 
-      // TODO Make sure to update the replication information on a project with what we can for replication.
-      //repo.setReplicationInfo( repInfo );
+      // TODO What about the repoId should it be here at all?, how to we get this in gerrit? We can use the name
+      // and let gitMS return more information to us when we eventually request info about this object?
+      // I will do that for now, and when it returns the ID we can cache it off for later re-use.
+      // replicationInfo.repositoryId =
+
+      // TODO Test project name  in subdirectories, as we need it to be unique!
+      repo.setReplicationInfo( replicationInfo );
       return repo;
     }
 
