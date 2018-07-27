@@ -14,7 +14,8 @@ gerrit_plugin(
     ':jgit-http-apache',
     ':jgit-lfs',
     ':jgit-lfs-server',
-    '//lib/wandisco:gerrit.gitms.shared'
+    '//lib/wandisco:gerrit.gitms.shared',
+    '//lib/jackson:jackson-mapper-asl'
   ],
   provided_deps = [
     '//lib/httpcomponents:httpcore'
