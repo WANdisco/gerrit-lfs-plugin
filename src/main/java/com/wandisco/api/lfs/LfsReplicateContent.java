@@ -2,14 +2,13 @@ package com.wandisco.api.lfs;
 
 import com.google.common.base.Strings;
 import com.googlesource.gerrit.plugins.lfs.LfsReplicatedRequestBuilder;
+import com.wandisco.gerrit.gitms.shared.api.ApiResponse;
 import com.wandisco.gerrit.gitms.shared.properties.GitMsApplicationProperties;
 import org.eclipse.jgit.lfs.errors.GitMSException;
 import org.eclipse.jgit.lfs.lib.AnyLongObjectId;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
 
 import static com.wandisco.gerrit.gitms.shared.util.ReplicationUtils.getRepoWithoutSuffix;
 import static com.wandisco.gerrit.gitms.shared.util.ReplicationUtils.parseGitMSConfig;
@@ -39,32 +38,24 @@ public class LfsReplicateContent {
       throw new GitMSException("Invalid GitMS application configuration - missing public Api Rest port property: jetty.http.port");
     }
 
-    LfsReplicatedRequestBuilder lfsRequestBuilder = null;
     try {
-      lfsRequestBuilder = new LfsReplicatedRequestBuilder(localJettyHost, Integer.valueOf(localJettyPort), getRepoWithoutSuffix(projectName), objectId.getName(),
+      LfsReplicatedRequestBuilder lfsRequestBuilder = new LfsReplicatedRequestBuilder
+          (localJettyHost, Integer.valueOf(localJettyPort), getRepoWithoutSuffix(projectName), objectId.getName(),
           contentDeliveryPath.length(), dataNamespace, contentDeliveryPath.getName());
 
-      int response = lfsRequestBuilder.getHttpResponseCode();
+      ApiResponse response = lfsRequestBuilder.issueRequest();
 
-      StringBuilder responseString = new StringBuilder();
-      if (lfsRequestBuilder.getHttpErrorStream() != null) {
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(lfsRequestBuilder.getHttpErrorStream()))) {
-          String line;
-          while ((line = reader.readLine()) != null) {
-            responseString.append(line).append("\n");
-          }
-        }
-      }
-      if (response != 202 && response != 200) {
-        String err = "GitMS LFS Request : Response code: [" + response + "] " + "Replicator response: [" + responseString.toString() + " ]";
+      // basically OK, CREATED, or NOT_CONTENT responses are success but allow the whole 200-299 range.
+      // anything else treat as failure.
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        String err = String.format("GitMS LFS Request : Response code: [%d] Replicator response: [%s].", response.statusCode, response.response);
         throw new GitMSException(err);
       }
-    } catch (IOException e) {
-      throw new Exception("Error making LFS request: " + e.toString(), e);
+
+      // if we replicate the item, we could update our local cache, but instead just let the next
+      // request for the content do it for us.
     } catch (Exception e) {
       throw new Exception("Error making LFS request: " + e.toString(), e);
-    } finally {
-      lfsRequestBuilder.disconnect();
     }
 
   }
