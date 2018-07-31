@@ -62,6 +62,7 @@ public class LfsRepositoryResolver {
 
     LargeFileRepository repository = cache.get(backend);
     if (repository != null) {
+
       return repository;
     }
 
