@@ -14,7 +14,7 @@ gerrit_plugin(
     ':jgit-http-apache',
     ':jgit-lfs',
     ':jgit-lfs-server',
-    '//lib/wandisco:gerrit.gitms.shared',
+    '//lib/wandisco:gerrit-gitms-interface',
     '//lib/jackson:jackson-mapper-asl'
   ],
   provided_deps = [
@@ -32,7 +32,7 @@ gerrit_plugin(
 maven_jar(
   name = 'jgit-http-apache',
   id = 'org.eclipse.jgit:org.eclipse.jgit.http.apache:' + JGIT_VERSION_WD,
-  sha1 = 'cf90d9d8d37897bfb128ffa3a0de87f802e47ce1',
+  sha1 = 'cb24679c30bb398a106582ce0e28c0f9a6a1ed94',
   license = 'jgit',
   repository = REPO_WD,
   unsign = True,
@@ -45,8 +45,8 @@ maven_jar(
 maven_jar(
   name = 'jgit-lfs',
   id = 'org.eclipse.jgit:org.eclipse.jgit.lfs:' + JGIT_VERSION_WD,
-  bin_sha1 = '387cfba0aee737ebdcecdbf861e1a6e03a6a65c9',
-  src_sha1 = '42cc8e5c5ae28f8fdd22c41a901298f887bc3bdd',
+  bin_sha1 = 'e74e1f3a31f4a1602f124816ec6462ec3772ea45',
+  src_sha1 = 'ff129877b10b15112c506014823142b5ed8e2736',
   license = 'jgit',
   repository = REPO_WD,
   unsign = True,
@@ -59,8 +59,8 @@ maven_jar(
 maven_jar(
   name = 'jgit-lfs-server',
   id = 'org.eclipse.jgit:org.eclipse.jgit.lfs.server:' + JGIT_VERSION_WD,
-  bin_sha1 = '156961129c78e2bed9c276153a702fc7ab8114b7',
-  src_sha1 = 'b8cd775b5be279d21e0af48860f219883b9942fc',
+  bin_sha1 = '9516ebd09b0f6c6c44ebef59636a196bd3b7c2fc',
+  src_sha1 = '91f3e5afc91d800d16e69ce8291910ce5f87d448',
   license = 'jgit',
   repository = REPO_WD,
   unsign = True,
