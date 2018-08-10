@@ -42,15 +42,14 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.MessageFormat;
-import java.util.UUID;
 
 import static com.googlesource.gerrit.plugins.lfs.fs.LocalLargeFileRepository.DOWNLOAD;
 import static com.googlesource.gerrit.plugins.lfs.fs.LocalLargeFileRepository.UPLOAD;
 import static com.wandisco.api.lfs.LfsReplicateContent.replicateLfsData;
+import static com.wandisco.utils.StringUtils.getUniqueString;
 import static org.eclipse.jgit.util.HttpSupport.HDR_AUTHORIZATION;
 
 public class LfsFsContentServlet extends FileLfsServlet {
@@ -144,10 +143,13 @@ public class LfsFsContentServlet extends FileLfsServlet {
       return;
     }
 
-    UUID lfsUuid = getUuid(id.toString());
-    String cdTmpFile = lfsUuid + "_" + id.getName() + ".lfsdata";
+    // Create a unique name from this fixed ID, so that retries using the same content DO NOT collide with an existing CD upload.
+    // e.g. upload oid 1, and if we didn't append a unique id, a retry would try to overwrite oid 1 in the CD location which can collide
+    // with existing proposals.
+    final String lfsUniqueName = getUniqueString(id.getName(), ".lfsdata", true);
+
     final Path contentDeliveryPath = Paths.get(ReplicationUtils.parseForProperty("content.location") + "/" +
-        ReplicationUtils.getCDRepoNameSpace(gitRepo) + "/" + cdTmpFile);
+        ReplicationUtils.getCDRepoNameSpace(gitRepo) + "/" + lfsUniqueName);
     /*
      * Writes the LFS object to the specified path on disk, in this case the path specified
      * is the content delivery location in GitMS. Once the disk write is completed the
@@ -170,25 +172,16 @@ public class LfsFsContentServlet extends FileLfsServlet {
 
     try {
         log.info("Making request to GitMS to replicate the LFS Object");
-        replicateLfsData(repository.getBackend().getName(),contentDeliveryPath.toFile(),
-            repository.getProjectName(), id);
+
+        replicateLfsData(repository.getBackend().getName(),
+            contentDeliveryPath.toFile(),
+            repository.getProjectName(),
+            id);
     } catch (GitMSException | IOException e) {
       sendError(rsp, HttpStatus.SC_INTERNAL_SERVER_ERROR, e.getMessage());
     } catch (Exception e) {
       sendError(rsp, HttpStatus.SC_INTERNAL_SERVER_ERROR, e.getMessage());
     }
-  }
-
-  /**
-   * Get the unique file identifier for the LFS object
-   * The unique identifier will be a UUID eg. 067e6162-3b6f-4ae2-a171-2470b63dff00
-   * @param lfsFileObject
-   * @return
-   * @throws UnsupportedEncodingException
-   */
-  private UUID getUuid(String lfsFileObject) throws UnsupportedEncodingException {
-    byte[] bytes = lfsFileObject.getBytes("UTF-8");
-    return UUID.nameUUIDFromBytes(bytes);
   }
 
   /*
