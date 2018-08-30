@@ -145,8 +145,8 @@ public class LfsFsContentServlet extends FileLfsServlet {
     }
 
     // validate that the repository has replication info on it, or we should be in here.
-    if (Strings.isNullOrEmpty(repositoryProjectName)) {
-      sendError(rsp, HttpStatus.SC_INTERNAL_SERVER_ERROR, "Missing LFS project name, when uploading content.");
+    if (Strings.isNullOrEmpty(repositoryIdentity)) {
+      sendError(rsp, HttpStatus.SC_INTERNAL_SERVER_ERROR, "Missing LFS project identity, when uploading content.");
       return;
     }
 
