@@ -134,11 +134,18 @@ public class LfsFsContentServlet extends FileLfsServlet {
     /* The path to GitMS content delivery which is passed to the ContentDeliveryObjectUploader
      * so It has somewhere to write the byte stream to disk.
      */
-    String gitRepo = repository.getProjectName();
+    final String repositoryProjectName = repository.getProjectName();
+    final String repositoryIdentity = repository.getProjectIdentity();
 
     // validate that the repository has replication info on it, or we should be in here.
     // This is a WD version of this method and it should have used getLargeFileRepository which sets this obj up.
-    if (Strings.isNullOrEmpty(gitRepo)) {
+    if (Strings.isNullOrEmpty(repositoryProjectName)) {
+      sendError(rsp, HttpStatus.SC_INTERNAL_SERVER_ERROR, "Missing LFS project name, when uploading content.");
+      return;
+    }
+
+    // validate that the repository has replication info on it, or we should be in here.
+    if (Strings.isNullOrEmpty(repositoryProjectName)) {
       sendError(rsp, HttpStatus.SC_INTERNAL_SERVER_ERROR, "Missing LFS project name, when uploading content.");
       return;
     }
@@ -147,9 +154,11 @@ public class LfsFsContentServlet extends FileLfsServlet {
     // e.g. upload oid 1, and if we didn't append a unique id, a retry would try to overwrite oid 1 in the CD location which can collide
     // with existing proposals.
     final String lfsUniqueName = getUniqueString(id.getName(), ".lfsdata", true);
+    final Path cdRepoNameSpace = ReplicationUtils.getCDRepoNameSpace(repositoryProjectName, repositoryIdentity);
 
-    final Path contentDeliveryPath = Paths.get(ReplicationUtils.parseForProperty("content.location") + "/" +
-        ReplicationUtils.getCDRepoNameSpace(gitRepo) + "/" + lfsUniqueName);
+    // Resolve the unique location which is this lfs object inside our specific repos CD location.
+    final Path contentDeliveryPath = Paths.get(cdRepoNameSpace.toFile().getPath(),  lfsUniqueName);
+
     /*
      * Writes the LFS object to the specified path on disk, in this case the path specified
      * is the content delivery location in GitMS. Once the disk write is completed the

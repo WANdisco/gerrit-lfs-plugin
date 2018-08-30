@@ -4,7 +4,7 @@ include_defs('//lib/WD_REPOSITORY')
 
 JGIT_VERSION = '4.5.0.201609210915-r'
 REPO = MAVEN_CENTRAL
-JGIT_VERSION_WD = '4.5.2.201704071617-r_WDv4_TC4'
+JGIT_VERSION_WD = '4.5.2.201704071617-r_WDv4_TC5'
 
 gerrit_plugin(
   name = 'lfs',
