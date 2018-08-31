@@ -40,6 +40,14 @@ public class LfsConfigurationFactory {
   }
 
   /**
+   * Return the injector Lfs Plugin name.
+   * @return
+   */
+  public String getPluginName() {
+    return pluginName;
+  }
+
+  /**
    * @return the project-specific LFS configuration.
    */
   public LfsProjectsConfig getProjectsConfig() {
@@ -51,5 +59,16 @@ public class LfsConfigurationFactory {
    */
   public LfsGlobalConfig getGlobalConfig() {
     return new LfsGlobalConfig(configFactory.getGlobalPluginConfig(pluginName));
+  }
+
+  /**
+   * Force a plugin from the configFactory cache, to have its global configuration reloaded.
+   * This will remove the entry from the plugin config cache, and force it to be retrived fresh.
+   *
+   * Only required for online - refresh of plugin state.
+   * @param pluginName
+   */
+  public void forceReloadOfGlobalConfig(final String pluginName){
+    configFactory.forceReloadGlobalPluginConfig(pluginName);
   }
 }

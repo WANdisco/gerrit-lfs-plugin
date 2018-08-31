@@ -27,11 +27,15 @@ import java.util.Map;
  * Represents the global LFS configuration stored in $SITE/etc/lfs.config.
  */
 public class LfsGlobalConfig {
-
+  
   private final Config cfg;
 
   LfsGlobalConfig(Config cfg) {
     this.cfg = cfg;
+  }
+
+  public Config getCfg() {
+    return cfg;
   }
 
   public LfsBackend getDefaultBackend() {
