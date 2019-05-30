@@ -1,4 +1,3 @@
-
 #/********************************************************************************
 # * Copyright (c) 2014-2018 WANdisco
 # *
@@ -9,22 +8,21 @@
 # *
 # * Apache License, Version 2.0
 # *
-# ********************************************************************************/
- 
+# ********************************************************************************
+
 include_defs('//bucklets/gerrit_plugin.bucklet')
 include_defs('//bucklets/maven_jar.bucklet')
 
-# WD Definitions - using gerrit main lib def files.
-# If you need to build plugin on its own, then define these values here.
-# VERS=Jgit Base Version
-# VERS_WD=WD Replicated Jgit version
-# REPO=MAVEN_CENTRAL
-# REPO_WD=WD Public Repo
-include_defs('//lib/WD_REPOSITORY')
-include_defs('//lib/JGIT_VERSION')
+# Defines the jgit base version
+JGIT_VERSION = '4.5.5.201812240535-r'
 
+# Defines the WD postfix
+POSTFIX_WD = '_WDv2'
 
+# Defines the WD replicated version of jgit
+VERS_WD = JGIT_VERSION + POSTFIX_WD
 
+REPO = MAVEN_CENTRAL
 
 gerrit_plugin(
   name = 'lfs',
@@ -34,11 +32,9 @@ gerrit_plugin(
     ':jgit-http-apache',
     ':jgit-lfs',
     ':jgit-lfs-server',
-    '//lib/wandisco:gerrit-gitms-interface',
-    '//lib/jackson:jackson-mapper-asl'
   ],
   provided_deps = [
-    '//lib/httpcomponents:httpcore'
+    '//lib/httpcomponents:httpcore',
   ],
   manifest_entries = [
     'Gerrit-PluginName: lfs',
@@ -52,9 +48,9 @@ gerrit_plugin(
 maven_jar(
   name = 'jgit-http-apache',
   id = 'org.eclipse.jgit:org.eclipse.jgit.http.apache:' + VERS_WD,
-  sha1 = '2a83a08bdbca9e2d5d470e78ef13c4e8ebafeee4',
+  sha1 = 'e5deb3a6323d45adacd04f518aa96e574556818a',
   license = 'jgit',
-  repository = REPO_WD,
+  repository = REPO,
   unsign = True,
   exclude = [
     'about.html',
@@ -65,10 +61,10 @@ maven_jar(
 maven_jar(
   name = 'jgit-lfs',
   id = 'org.eclipse.jgit:org.eclipse.jgit.lfs:' + VERS_WD,
-  bin_sha1 = 'da1b64de1c06904c56c5685a4330f849aea52e3d',
-  src_sha1 = '5611c870bc4b24db139892067d0a70ca12b037f4',
+  bin_sha1 = '9bcb718ee8b7375e4981431120bb5a9455974b3f',
+  src_sha1 = '45133427eb522ffc52bc12a5589a55a0684f9b94',
   license = 'jgit',
-  repository = REPO_WD,
+  repository = REPO,
   unsign = True,
   exclude = [
     'about.html',
@@ -79,10 +75,10 @@ maven_jar(
 maven_jar(
   name = 'jgit-lfs-server',
   id = 'org.eclipse.jgit:org.eclipse.jgit.lfs.server:' + VERS_WD,
-  bin_sha1 = '1278cf480cd7d854affd07f26088293ade34087a',
-  src_sha1 = 'b0867f6f5505f972d7f187dd451abb562e554274',
+  bin_sha1 = '9b3baa4ed9f51ff98bc2691632ce5c147b0bcf72',
+  src_sha1 = 'c95e16eb781cca1520758c8fc2965f1ffcc7c6a6',
   license = 'jgit',
-  repository = REPO_WD,
+  repository = REPO,
   unsign = True,
   exclude = [
     'about.html',
