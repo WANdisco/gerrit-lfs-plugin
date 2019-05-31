@@ -1,3 +1,4 @@
+
 #/********************************************************************************
 # * Copyright (c) 2014-2018 WANdisco
 # *
@@ -8,21 +9,22 @@
 # *
 # * Apache License, Version 2.0
 # *
-# ********************************************************************************
-
+# ********************************************************************************/
+ 
 include_defs('//bucklets/gerrit_plugin.bucklet')
 include_defs('//bucklets/maven_jar.bucklet')
 
-# Defines the jgit base version
-JGIT_VERSION = '4.5.5.201812240535-r'
+# WD Definitions - using gerrit main lib def files.
+# If you need to build plugin on its own, then define these values here.
+# VERS=Jgit Base Version
+# VERS_WD=WD Replicated Jgit version
+# REPO=MAVEN_CENTRAL
+# REPO_WD=WD Public Repo
+include_defs('//lib/WD_REPOSITORY')
+include_defs('//lib/JGIT_VERSION')
 
-# Defines the WD postfix
-POSTFIX_WD = '_WDv2'
 
-# Defines the WD replicated version of jgit
-VERS_WD = JGIT_VERSION + POSTFIX_WD
 
-REPO = MAVEN_CENTRAL
 
 gerrit_plugin(
   name = 'lfs',
@@ -32,9 +34,11 @@ gerrit_plugin(
     ':jgit-http-apache',
     ':jgit-lfs',
     ':jgit-lfs-server',
+    '//lib/wandisco:gerrit-gitms-interface',
+    '//lib/jackson:jackson-mapper-asl'
   ],
   provided_deps = [
-    '//lib/httpcomponents:httpcore',
+    '//lib/httpcomponents:httpcore'
   ],
   manifest_entries = [
     'Gerrit-PluginName: lfs',
