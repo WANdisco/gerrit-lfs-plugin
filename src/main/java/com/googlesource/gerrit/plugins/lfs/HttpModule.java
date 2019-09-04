@@ -61,12 +61,8 @@ public class HttpModule extends HttpPluginModule {
       populateRepository(backend);
     }
 
-/*    GER-875: temp disable of JS load due to incompatiblity
-*     with chrome 76 onward
-*     TODO Re-enable after GER-870 or later versions to support JS again.
-*/
-//    DynamicSet.bind(binder(), WebUiPlugin.class)
-//      .toInstance(new JavaScriptPlugin("lfs-project-info.js"));
+    DynamicSet.bind(binder(), WebUiPlugin.class)
+      .toInstance(new JavaScriptPlugin("lfs-project-info.js"));
   }
 
   private void populateRepository(LfsBackend backend) {
