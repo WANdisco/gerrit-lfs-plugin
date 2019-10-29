@@ -1,3 +1,16 @@
+
+/********************************************************************************
+ * Copyright (c) 2014-2018 WANdisco
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Apache License, Version 2.0
+ *
+ ********************************************************************************/
+ 
 // Copyright (C) 2016 The Android Open Source Project
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -40,7 +53,17 @@ public class LfsConfigurationFactory {
     this.configFactory = configFactory;
   }
 
-  /** @return the project-specific LFS configuration. */
+  /**
+   * Return the injector Lfs Plugin name.
+   * @return
+   */
+  public String getPluginName() {
+    return pluginName;
+  }
+
+  /**
+   * @return the project-specific LFS configuration.
+   */
   public LfsProjectsConfig getProjectsConfig() {
     return new LfsProjectsConfig(pluginName, projectCache, allProjects);
   }
@@ -48,5 +71,16 @@ public class LfsConfigurationFactory {
   /** @return the global LFS configuration. */
   public LfsGlobalConfig getGlobalConfig() {
     return new LfsGlobalConfig(configFactory.getGlobalPluginConfig(pluginName));
+  }
+
+  /**
+   * Force a plugin from the configFactory cache, to have its global configuration reloaded.
+   * This will remove the entry from the plugin config cache, and force it to be retrived fresh.
+   *
+   * Only required for online - refresh of plugin state.
+   * @param pluginName
+   */
+  public void forceReloadOfGlobalConfig(final String pluginName){
+    configFactory.forceReloadGlobalPluginConfig(pluginName);
   }
 }

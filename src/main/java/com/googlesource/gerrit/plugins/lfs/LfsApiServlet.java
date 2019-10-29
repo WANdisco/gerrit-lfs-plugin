@@ -1,3 +1,16 @@
+
+/********************************************************************************
+ * Copyright (c) 2014-2018 WANdisco
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Apache License, Version 2.0
+ *
+ ********************************************************************************/
+ 
 // Copyright (C) 2016 The Android Open Source Project
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -42,6 +55,7 @@ import org.eclipse.jgit.lfs.errors.LfsValidationError;
 import org.eclipse.jgit.lfs.server.LargeFileRepository;
 import org.eclipse.jgit.lfs.server.LfsObject;
 import org.eclipse.jgit.lfs.server.LfsProtocolServlet;
+import org.eclipse.jgit.lfs.server.ReplicationInfo;
 
 @Singleton
 public class LfsApiServlet extends LfsProtocolServlet {
@@ -57,6 +71,7 @@ public class LfsApiServlet extends LfsProtocolServlet {
   private final LfsConfigurationFactory lfsConfigFactory;
   private final LfsRepositoryResolver repoResolver;
   private final LfsAuthUserProvider userProvider;
+  private static final Logger logger = LoggerFactory.getLogger(LfsApiServlet.class);
 
   @Inject
   LfsApiServlet(
@@ -115,7 +130,19 @@ public class LfsApiServlet extends LfsProtocolServlet {
         }
       }
 
-      return repoResolver.get(project, config.getBackend());
+      LargeFileRepository repo = repoResolver.get(project, config.getBackend());
+      ReplicationInfo replicationInfo = new ReplicationInfo();
+      replicationInfo.isReplica = true;
+      replicationInfo.repositoryName = projName;
+
+      // TODO What about the repoId should it be here at all?, how to we get this in gerrit? We can use the name
+      // and let gitMS return more information to us when we eventually request info about this object?
+      // I will do that for now, and when it returns the ID we can cache it off for later re-use.
+      // replicationInfo.repositoryId =
+
+      // TODO Test project name  in subdirectories, as we need it to be unique!
+      repo.setReplicationInfo( replicationInfo );
+      return repo;
     }
 
     throw new LfsUnavailable(project.get());
