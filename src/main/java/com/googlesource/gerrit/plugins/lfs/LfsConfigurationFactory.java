@@ -81,6 +81,7 @@ public class LfsConfigurationFactory {
    * @param pluginName
    */
   public void forceReloadOfGlobalConfig(final String pluginName){
-    configFactory.forceReloadGlobalPluginConfig(pluginName);
+    // TODO: get reload from gerrit config factory....
+    //    configFactory.forceReloadGlobalPluginConfig(pluginName);
   }
 }

@@ -34,7 +34,7 @@ import com.google.gerrit.common.Nullable;
 import java.util.Objects;
 
 public class LfsBackend {
-  private static final String DEFAULT = "default";
+  public static final String DEFAULT = "default";
 
   public final String name;
   public final LfsBackendType type;

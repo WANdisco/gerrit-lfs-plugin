@@ -19,6 +19,7 @@ gerrit_plugin(
     ],
     resources = glob(["src/main/resources/**/*"]),
     deps = [
+        "@gerrit-gitms-interface//jar",
         "@jgit-http-apache//jar",
         "@jgit-lfs-server//jar",
         "@jgit-lfs//jar",
@@ -41,6 +42,6 @@ java_library(
     exports = PLUGIN_DEPS + PLUGIN_TEST_DEPS + [
         ":lfs__plugin",
         "@jgit-lfs//jar",
-        "@joda-time//jar",
+        "@joda_time//jar",
     ],
 )

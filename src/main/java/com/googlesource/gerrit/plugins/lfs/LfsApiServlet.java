@@ -10,7 +10,7 @@
  * Apache License, Version 2.0
  *
  ********************************************************************************/
- 
+
 // Copyright (C) 2016 The Android Open Source Project
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -60,7 +60,7 @@ import org.eclipse.jgit.lfs.server.ReplicationInfo;
 @Singleton
 public class LfsApiServlet extends LfsProtocolServlet {
   public static final String LFS_OBJECTS_REGEX_REST =
-      String.format(LFS_URL_REGEX_TEMPLATE, LFS_OBJECTS_PATH);
+          String.format(LFS_URL_REGEX_TEMPLATE, LFS_OBJECTS_PATH);
 
   private static final FluentLogger log = FluentLogger.forEnclosingClass();
   private static final long serialVersionUID = 1L;
@@ -71,15 +71,14 @@ public class LfsApiServlet extends LfsProtocolServlet {
   private final LfsConfigurationFactory lfsConfigFactory;
   private final LfsRepositoryResolver repoResolver;
   private final LfsAuthUserProvider userProvider;
-  private static final Logger logger = LoggerFactory.getLogger(LfsApiServlet.class);
 
   @Inject
   LfsApiServlet(
-      ProjectCache projectCache,
-      PermissionBackend permissionBackend,
-      LfsConfigurationFactory lfsConfigFactory,
-      LfsRepositoryResolver repoResolver,
-      LfsAuthUserProvider userProvider) {
+          ProjectCache projectCache,
+          PermissionBackend permissionBackend,
+          LfsConfigurationFactory lfsConfigFactory,
+          LfsRepositoryResolver repoResolver,
+          LfsAuthUserProvider userProvider) {
     this.projectCache = projectCache;
     this.permissionBackend = permissionBackend;
     this.lfsConfigFactory = lfsConfigFactory;
@@ -89,7 +88,7 @@ public class LfsApiServlet extends LfsProtocolServlet {
 
   @Override
   protected LargeFileRepository getLargeFileRepository(LfsRequest request, String path, String auth)
-      throws LfsException {
+          throws LfsException {
     String pathInfo = path.startsWith("/") ? path : "/" + path;
     Matcher matcher = URL_PATTERN.matcher(pathInfo);
     if (!matcher.matches()) {
@@ -122,9 +121,9 @@ public class LfsApiServlet extends LfsProtocolServlet {
           for (LfsObject object : request.getObjects()) {
             if (object.getSize() > maxObjectSize) {
               throw new LfsValidationError(
-                  String.format(
-                      "size of object %s (%d bytes) exceeds limit (%d bytes)",
-                      object.getOid(), object.getSize(), maxObjectSize));
+                      String.format(
+                              "size of object %s (%d bytes) exceeds limit (%d bytes)",
+                              object.getOid(), object.getSize(), maxObjectSize));
             }
           }
         }
@@ -149,20 +148,20 @@ public class LfsApiServlet extends LfsProtocolServlet {
   }
 
   private void authorizeUser(CurrentUser user, ProjectState state, LfsRequest request)
-      throws LfsUnauthorized {
+          throws LfsUnauthorized {
     Project.NameKey projectName = state.getNameKey();
     if ((request.isDownload()
             && !permissionBackend.user(user).project(projectName).testOrFalse(ACCESS))
-        || (request.isUpload()
+            || (request.isUpload()
             && !permissionBackend
-                .user(user)
-                .project(projectName)
-                .testOrFalse(PUSH_AT_LEAST_ONE_REF))) {
+            .user(user)
+            .project(projectName)
+            .testOrFalse(PUSH_AT_LEAST_ONE_REF))) {
       String op = request.getOperation().toLowerCase();
       String project = state.getProject().getName();
       String userName = user.getUserName().orElse("anonymous");
       log.atFine().log(
-          "operation %s unauthorized for user %s on project %s", op, userName, project);
+              "operation %s unauthorized for user %s on project %s", op, userName, project);
       throw new LfsUnauthorized(op, project);
     }
   }

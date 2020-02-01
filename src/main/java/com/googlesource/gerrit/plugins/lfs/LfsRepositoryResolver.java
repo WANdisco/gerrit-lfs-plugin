@@ -119,9 +119,9 @@ public class LfsRepositoryResolver {
     }
 
     // we didn't find the backend, throw exception.
-    log.error(String.format("Project %s is configured with not existing"
+    log.atSevere().log(String.format("Project %s is configured with not existing"
             + " backend %s", project,
-        Strings.isNullOrEmpty(backendName) ? DEFAULT : backendName));
+        Strings.isNullOrEmpty(backendName) ? LfsBackend.DEFAULT : backendName));
     throw new LfsRepositoryNotFound(project.get());
   }
 }

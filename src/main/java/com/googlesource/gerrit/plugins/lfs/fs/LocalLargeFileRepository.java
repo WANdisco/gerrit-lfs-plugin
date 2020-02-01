@@ -54,6 +54,7 @@ public class LocalLargeFileRepository extends FileLfsRepository {
   private final String servletUrlPattern;
   private final LfsFsRequestAuthorizer authorizer;
   private final Long expiresIn;
+  private final LfsBackend backend;
 
   @Inject
   LocalLargeFileRepository(
@@ -75,6 +76,7 @@ public class LocalLargeFileRepository extends FileLfsRepository {
                     backend.name,
                     "expirationSeconds",
                     DEFAULT_EXPIRATION_SECONDS);
+    this.backend = backend;
   }
 
   public String getServletUrlPattern() {

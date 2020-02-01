@@ -10,3 +10,9 @@
 /.watchmanconfig
 /buck-out
 *.DS_Store
+
+\.ijwb/
+
+\.idea/
+
+bazel-gerrit-lfs-plugin
