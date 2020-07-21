@@ -4,9 +4,9 @@ load("//tools/bzl:maven_jar.bzl", "GERRIT", "MAVEN_CENTRAL", "MAVEN_LOCAL", "mav
 # This is only here to allow standalone building, when building as part of the parent gerrit project
 # it will be using the main WORKSPACE definitions instead, so be careful... updating it here isn't really
 # what is used in a production release.war package!!
-JGIT_VERSION = "5.1.12-WDv1-TC5-SNAPSHOT"
+JGIT_VERSION = "5.1.13-WDv1-SNAPSHOT"
 # WANdisco maven assets
-_GERRIT_GITMS_VERSION = "1.1.0.1-TC12-SNAPSHOT"
+_GERRIT_GITMS_VERSION = "1.1.0.1-TC14-SNAPSHOT"
 
 # Default repo being used...
 REPO = MAVEN_CENTRAL
