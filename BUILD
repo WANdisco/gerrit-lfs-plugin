@@ -42,6 +42,5 @@ java_library(
     exports = PLUGIN_DEPS + PLUGIN_TEST_DEPS + [
         ":lfs__plugin",
         "@jgit-lfs//jar",
-        "@joda_time//jar",
     ],
 )
