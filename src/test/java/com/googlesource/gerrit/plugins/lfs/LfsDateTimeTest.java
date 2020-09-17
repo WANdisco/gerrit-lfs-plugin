@@ -16,6 +16,7 @@ package com.googlesource.gerrit.plugins.lfs;
 
 import static com.google.common.truth.Truth.assertThat;
 import java.time.Instant;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 
@@ -27,7 +28,7 @@ public class LfsDateTimeTest {
   @Test
   public void format() throws Exception {
     Instant now = Instant.now();
-    ZonedDateTime zdt = ZonedDateTime.ofInstant(now, DateTimeFormatter.ISO_OFFSET_DATE_TIME.getZone());
+    ZonedDateTime zdt = ZonedDateTime.ofInstant(now, ZoneOffset.UTC);
     String fixedFormatTime = formatter.format(zdt);
 
     // we used tom compare JodaTime now comparing ISO Offset zulu javatime to Lfs formatted time.
