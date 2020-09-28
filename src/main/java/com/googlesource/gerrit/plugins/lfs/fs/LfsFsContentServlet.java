@@ -48,6 +48,7 @@ import com.googlesource.gerrit.plugins.lfs.ContentDeliveryObjectUploader;
 import com.googlesource.gerrit.plugins.lfs.fs.LfsFsRequestAuthorizer;
 import com.googlesource.gerrit.plugins.lfs.fs.LocalLargeFileRepository;
 import com.wandisco.gerrit.gitms.shared.util.ReplicationUtils;
+import com.wandisco.gerrit.gitms.shared.exception.ConfigurationException;
 import org.apache.http.HttpStatus;
 import org.eclipse.jgit.lfs.errors.GitMSException;
 import org.eclipse.jgit.lfs.errors.InvalidLongObjectIdException;
@@ -173,7 +174,13 @@ public class LfsFsContentServlet extends FileLfsServlet {
         // e.g. upload oid 1, and if we didn't append a unique id, a retry would try to overwrite oid 1 in the CD location which can collide
         // with existing proposals.
         final String lfsUniqueName = getUniqueString(id.getName(), ".lfsdata", true);
-        final Path cdRepoNameSpace = ReplicationUtils.getCDRepoNameSpace(repositoryProjectName, repositoryIdentity);
+        final Path cdRepoNameSpace;
+        try {
+            cdRepoNameSpace = ReplicationUtils.getCDRepoNameSpace(repositoryProjectName, repositoryIdentity);
+        } catch (final ConfigurationException ex) {
+            sendError(rsp, HttpStatus.SC_INTERNAL_SERVER_ERROR, ex.getMessage());
+            return;
+        }
 
         // Resolve the unique location which is this lfs object inside our specific repos CD location.
         final Path contentDeliveryPath = Paths.get(cdRepoNameSpace.toFile().getPath(),  lfsUniqueName);
