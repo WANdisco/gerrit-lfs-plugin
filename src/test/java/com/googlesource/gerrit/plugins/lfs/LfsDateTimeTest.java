@@ -23,7 +23,7 @@ import java.time.format.DateTimeFormatter;
 import org.junit.Test;
 
 public class LfsDateTimeTest {
-  private static final DateTimeFormatter formatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
+  private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSZZZZZ");
 
   @Test
   public void format() throws Exception {
