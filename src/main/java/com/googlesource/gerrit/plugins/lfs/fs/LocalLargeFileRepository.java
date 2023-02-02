@@ -1,3 +1,16 @@
+
+/********************************************************************************
+ * Copyright (c) 2014-2018 WANdisco
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Apache License, Version 2.0
+ *
+ ********************************************************************************/
+ 
 // Copyright (C) 2015 The Android Open Source Project
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -50,6 +63,7 @@ public class LocalLargeFileRepository extends FileLfsRepository {
   private final String servletUrlPattern;
   private final LfsFsRequestAuthorizer authorizer;
   private final int expirationSeconds;
+  private final LfsBackend backend;
 
   @Inject
   LocalLargeFileRepository(LfsConfigurationFactory configFactory,
@@ -62,6 +76,9 @@ public class LocalLargeFileRepository extends FileLfsRepository {
             backend, defaultDataDir));
     this.authorizer = authorizer;
     this.servletUrlPattern = "/" + getContentPath(backend) + "*";
+
+    this.backend = backend;
+
     this.expirationSeconds = configFactory.getGlobalConfig()
         .getInt(backend.type.name(), backend.name, "expirationSeconds",
             DEFAULT_TIMEOUT);
@@ -69,6 +86,10 @@ public class LocalLargeFileRepository extends FileLfsRepository {
 
   public String getServletUrlPattern() {
     return servletUrlPattern;
+  }
+
+  public LfsBackend getBackend() {
+    return backend;
   }
 
   @Override
