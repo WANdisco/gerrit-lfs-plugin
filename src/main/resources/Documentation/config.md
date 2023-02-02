@@ -9,14 +9,6 @@ The following options must be set in `$GERRIT_SITE/etc/gerrit.config`.
 lfs.plugin = @PLUGIN@
 : With this option set LFS requests are forwarded to the @PLUGIN@ plugin.
 
-### Section `auth`
-
-auth.gitBasicAuth = true
-: Git LFS client uses Basic HTTP auth with LFS requests. When this option
-is not enabled (not set or equals to `false`) Git LFS HTTP requests are treated
-as anonymous requests. Therefore requests will be successfully authorized only
-for projects that allows anonymous to perform requested operation.
-
 ## Per Project Settings
 
 The following options can be configured in `@PLUGIN@.config` on the
@@ -58,7 +50,7 @@ projects under `/test` and limiting to `500 mb` for projects under other
 folders:
 
 ```
-  [@PLUGIN@ "test/*]
+  [@PLUGIN@ "test/*"]
     enabled = true
   [@PLUGIN@ "?/*"]
     enabled = true
@@ -100,6 +92,32 @@ from Global Plugin Settings.
 
 The following options can be configured in `$GERRIT_SITE/etc/@PLUGIN@.config`
 and `$GERRIT_SITE/etc/@PLUGIN@.secure.config.`
+
+### Section `locks`
+
+The [Git LFS File Locking API](https://github.com/git-lfs/git-lfs/blob/master/docs/api/locking.md)
+specifies that a certain path can be locked by a user. It prevents the file
+being accidentally overwritten by a different user, and costly (manual in
+most cases) binary file merge. Each lock is represented by a JSON structure:
+
+```
+ {
+    "id":"[lock id the same as lock file name]",
+    "path":"[path to the resource being locked]",
+    "locked_at":"[timestamp the lock was created in ISO 8601 format]",
+    "owner":{
+      "name":"[the name of the user that created the lock]"
+    }
+  }
+```
+
+The lock is stored in a file whose name is the SHA256 hash of the path being
+locked, under `locks.directory` followed by the project name.
+
+locks.directory
+: The directory in which to store Git LFS file locks.
+
+: Default is `$GERRIT_SITE/data/@PLUGIN@/lfs_locks`.
 
 ### Section `auth`
 

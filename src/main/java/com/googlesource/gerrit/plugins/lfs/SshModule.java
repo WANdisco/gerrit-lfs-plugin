@@ -17,12 +17,12 @@ package com.googlesource.gerrit.plugins.lfs;
 import com.google.gerrit.extensions.registration.DynamicItem;
 import com.google.gerrit.sshd.PluginCommandModule;
 import com.google.gerrit.sshd.plugin.LfsPluginAuthCommand;
+import com.googlesource.gerrit.plugins.lfs.auth.LfsSshAuth;
 
 public class SshModule extends PluginCommandModule {
 
   @Override
   protected void configureCommands() {
-    DynamicItem.bind(binder(), LfsPluginAuthCommand.LfsSshPluginAuth.class)
-      .to(LfsSshAuth.class);
+    DynamicItem.bind(binder(), LfsPluginAuthCommand.LfsSshPluginAuth.class).to(LfsSshAuth.class);
   }
 }

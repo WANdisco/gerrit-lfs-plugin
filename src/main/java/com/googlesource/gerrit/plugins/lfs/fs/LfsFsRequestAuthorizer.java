@@ -14,19 +14,18 @@
 
 package com.googlesource.gerrit.plugins.lfs.fs;
 
-import com.google.common.base.Optional;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-
-import com.googlesource.gerrit.plugins.lfs.AuthInfo;
-import com.googlesource.gerrit.plugins.lfs.LfsAuthToken;
-import com.googlesource.gerrit.plugins.lfs.LfsCipher;
-
-import org.eclipse.jgit.lfs.lib.AnyLongObjectId;
-import org.eclipse.jgit.lfs.lib.LongObjectId;
-
+import com.googlesource.gerrit.plugins.lfs.LfsDateTime;
+import com.googlesource.gerrit.plugins.lfs.auth.AuthInfo;
+import com.googlesource.gerrit.plugins.lfs.auth.LfsAuthToken;
+import com.googlesource.gerrit.plugins.lfs.auth.LfsCipher;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import org.eclipse.jgit.lfs.lib.AnyLongObjectId;
+import org.eclipse.jgit.lfs.lib.LongObjectId;
 
 @Singleton
 public class LfsFsRequestAuthorizer {
@@ -37,19 +36,17 @@ public class LfsFsRequestAuthorizer {
     this.processor = processor;
   }
 
-  public AuthInfo generateAuthInfo(String operation, AnyLongObjectId id,
-      int expirationSeconds) {
-    LfsFsAuthToken token = new LfsFsAuthToken(operation, id, expirationSeconds);
-    return new AuthInfo(processor.serialize(token), token.expiresAt);
+  public AuthInfo generateAuthInfo(
+      String operation, AnyLongObjectId id, Instant now, Long expiresIn) {
+    LfsFsAuthToken token = new LfsFsAuthToken(operation, id, now, expiresIn);
+    return new AuthInfo(processor.serialize(token), token.issued, token.expiresIn);
   }
 
-  public boolean verifyAuthInfo(String authToken, String operation,
-      AnyLongObjectId id) {
+  public boolean verifyAuthInfo(String authToken, String operation, AnyLongObjectId id) {
     Optional<LfsFsAuthToken> token = processor.deserialize(authToken);
     if (!token.isPresent()) {
       return false;
     }
-
     return new Verifier(token.get(), operation, id).verify();
   }
 
@@ -64,18 +61,22 @@ public class LfsFsRequestAuthorizer {
       List<String> values = new ArrayList<>(3);
       values.add(token.operation);
       values.add(token.id.getName());
-      values.add(token.expiresAt);
+      values.add(LfsDateTime.format(token.issued));
+      values.add(String.valueOf(token.expiresIn));
       return values;
     }
 
     @Override
     protected Optional<LfsFsAuthToken> createToken(List<String> values) {
-      if (values.size() != 3) {
-        return Optional.absent();
+      if (values.size() != 4) {
+        return Optional.empty();
       }
-
-      return Optional.of(new LfsFsAuthToken(values.get(0),
-          LongObjectId.fromString(values.get(1)), values.get(2)));
+      return Optional.of(
+          new LfsFsAuthToken(
+              values.get(0),
+              LongObjectId.fromString(values.get(1)),
+              values.get(2),
+              Long.valueOf(values.get(3))));
     }
   }
 
@@ -83,8 +84,7 @@ public class LfsFsRequestAuthorizer {
     private final String operation;
     private final AnyLongObjectId id;
 
-    protected Verifier(LfsFsAuthToken token,
-        String operation, AnyLongObjectId id) {
+    protected Verifier(LfsFsAuthToken token, String operation, AnyLongObjectId id) {
       super(token);
       this.operation = operation;
       this.id = id;
@@ -92,8 +92,7 @@ public class LfsFsRequestAuthorizer {
 
     @Override
     protected boolean verifyTokenValues() {
-      return operation.equals(token.operation)
-          && id.getName().equals(token.id.getName());
+      return operation.equals(token.operation) && id.getName().equals(token.id.getName());
     }
   }
 
@@ -101,15 +100,14 @@ public class LfsFsRequestAuthorizer {
     private final String operation;
     private final AnyLongObjectId id;
 
-    LfsFsAuthToken(String operation, AnyLongObjectId id,
-        int expirationSeconds) {
-      super(expirationSeconds);
+    LfsFsAuthToken(String operation, AnyLongObjectId id, Instant issued, Long expiresIn) {
+      super(issued, expiresIn);
       this.operation = operation;
       this.id = id;
     }
 
-    LfsFsAuthToken(String operation, AnyLongObjectId id, String expiresAt) {
-      super(expiresAt);
+    LfsFsAuthToken(String operation, AnyLongObjectId id, String issued, Long expiresIn) {
+      super(issued, expiresIn);
       this.operation = operation;
       this.id = id;
     }

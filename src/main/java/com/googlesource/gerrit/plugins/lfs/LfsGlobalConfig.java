@@ -1,3 +1,16 @@
+
+/********************************************************************************
+ * Copyright (c) 2014-2018 WANdisco
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Apache License, Version 2.0
+ *
+ ********************************************************************************/
+ 
 // Copyright (C) 2016 The Android Open Source Project
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,43 +27,35 @@
 
 package com.googlesource.gerrit.plugins.lfs;
 
-import com.google.common.base.Function;
-import com.google.common.collect.FluentIterable;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableMap.Builder;
+import static java.util.stream.Collectors.toMap;
 
+import com.google.common.collect.ImmutableMap;
+import java.util.Map;
 import org.eclipse.jgit.lib.Config;
 
-import java.util.Map;
-
-/**
- * Represents the global LFS configuration stored in $SITE/etc/lfs.config.
- */
+/** Represents the global LFS configuration stored in $SITE/etc/lfs.config. */
 public class LfsGlobalConfig {
-
+  
   private final Config cfg;
 
   LfsGlobalConfig(Config cfg) {
     this.cfg = cfg;
   }
 
+  public Config getCfg() {
+    return cfg;
+  }
+
   public LfsBackend getDefaultBackend() {
-    LfsBackendType type =
-        cfg.getEnum("storage", null, "backend", LfsBackendType.FS);
-    return new LfsBackend(null, type);
+    return LfsBackend.createDefault(cfg.getEnum("storage", null, "backend", LfsBackendType.FS));
   }
 
   public Map<String, LfsBackend> getBackends() {
-    Builder<String, LfsBackend> builder = ImmutableMap.builder();
-    for (final LfsBackendType type : LfsBackendType.values()) {
+    ImmutableMap.Builder<String, LfsBackend> builder = ImmutableMap.builder();
+    for (LfsBackendType type : LfsBackendType.values()) {
       Map<String, LfsBackend> backendsOfType =
-          FluentIterable.from(cfg.getSubsections(type.name()))
-              .toMap(new Function<String, LfsBackend>() {
-                @Override
-                public LfsBackend apply(String input) {
-                  return new LfsBackend(input, type);
-                }
-              });
+          cfg.getSubsections(type.name()).stream()
+              .collect(toMap(name -> name, name -> LfsBackend.create(name, type)));
       builder.putAll(backendsOfType);
     }
 
@@ -61,13 +66,11 @@ public class LfsGlobalConfig {
     return cfg.getString(section, subsection, name);
   }
 
-  public int getInt(String section, String subsection, String name,
-      int defaultValue) {
+  public int getInt(String section, String subsection, String name, int defaultValue) {
     return cfg.getInt(section, subsection, name, defaultValue);
   }
 
-  public boolean getBoolean(String section, String subsection, String name,
-      boolean defaultValue) {
+  public boolean getBoolean(String section, String subsection, String name, boolean defaultValue) {
     return cfg.getBoolean(section, subsection, name, defaultValue);
   }
 }

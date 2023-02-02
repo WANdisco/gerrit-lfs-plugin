@@ -17,28 +17,33 @@ package com.googlesource.gerrit.plugins.lfs;
 import static com.google.gerrit.server.project.ProjectResource.PROJECT_KIND;
 
 import com.google.gerrit.extensions.config.FactoryModule;
+import com.google.gerrit.extensions.events.LifecycleListener;
 import com.google.gerrit.extensions.restapi.RestApiModule;
-
+import com.google.inject.internal.UniqueAnnotations;
+import com.googlesource.gerrit.plugins.lfs.fs.LfsFsContentServlet;
 import com.googlesource.gerrit.plugins.lfs.fs.LocalLargeFileRepository;
+import com.googlesource.gerrit.plugins.lfs.locks.LfsLocksModule;
 import com.googlesource.gerrit.plugins.lfs.s3.S3LargeFileRepository;
-
-import org.eclipse.jgit.lfs.server.fs.LfsFsContentServlet;
 
 public class Module extends FactoryModule {
 
   @Override
   protected void configure() {
-    install(new RestApiModule() {
-      @Override
-      protected void configure() {
-        get(PROJECT_KIND, "lfs:config-project").to(GetLfsProjectConfig.class);
-        get(PROJECT_KIND, "lfs:config-global").to(GetLfsGlobalConfig.class);
-        put(PROJECT_KIND, "lfs:config-global").to(PutLfsGlobalConfig.class);
-      }
-    });
+    install(
+        new RestApiModule() {
+          @Override
+          protected void configure() {
+            get(PROJECT_KIND, "lfs:config-project").to(GetLfsProjectConfig.class);
+            get(PROJECT_KIND, "lfs:config-global").to(GetLfsGlobalConfig.class);
+            put(PROJECT_KIND, "lfs:config-global").to(PutLfsGlobalConfig.class);
+          }
+        });
+
+    bind(LifecycleListener.class).annotatedWith(UniqueAnnotations.create()).to(Lifecycle.class);
 
     factory(S3LargeFileRepository.Factory.class);
     factory(LocalLargeFileRepository.Factory.class);
     factory(LfsFsContentServlet.Factory.class);
+    install(new LfsLocksModule());
   }
 }

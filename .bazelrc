@@ -1,0 +1,3 @@
+build --workspace_status_command="python ./tools/workspace_status.py"
+test --build_tests_only
+
