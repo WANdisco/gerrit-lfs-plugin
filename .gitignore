@@ -5,3 +5,4 @@
 /.buckd
 /.watchmanconfig
 /buck-out
+*.DS_Store
