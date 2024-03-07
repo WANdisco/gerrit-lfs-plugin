@@ -17,10 +17,10 @@ package com.googlesource.gerrit.plugins.lfs.fs;
 import static com.google.common.truth.Truth.assertThat;
 import static org.eclipse.jgit.lfs.lib.LongObjectId.zeroId;
 
-import com.googlesource.gerrit.plugins.lfs.AuthInfo;
-import com.googlesource.gerrit.plugins.lfs.LfsCipher;
+import com.googlesource.gerrit.plugins.lfs.auth.AuthInfo;
+import com.googlesource.gerrit.plugins.lfs.auth.LfsCipher;
 import com.googlesource.gerrit.plugins.lfs.fs.LfsFsRequestAuthorizer.Processor;
-
+import java.time.Instant;
 import org.eclipse.jgit.lfs.lib.LongObjectId;
 import org.junit.Test;
 
@@ -30,21 +30,25 @@ public class LfsFsRequestAuthorizerTest {
 
   @Test
   public void testVerifyAuthInfo() throws Exception {
-    AuthInfo info = auth.generateAuthInfo("o", zeroId(), 1);
-    assertThat(auth.verifyAuthInfo(info.authToken, "o", zeroId())).isTrue();
+    AuthInfo info = auth.generateAuthInfo("o", zeroId(), Instant.now(), 1L);
+    assertThat(auth.verifyAuthInfo(info.authToken(), "o", zeroId())).isTrue();
   }
 
   @Test
   public void testVerifyAgainstDifferentOperation() throws Exception {
-    AuthInfo info = auth.generateAuthInfo("o", zeroId(), 1);
-    assertThat(auth.verifyAuthInfo(info.authToken, "p", zeroId())).isFalse();
+    AuthInfo info = auth.generateAuthInfo("o", zeroId(), Instant.now(), 1L);
+    assertThat(auth.verifyAuthInfo(info.authToken(), "p", zeroId())).isFalse();
   }
 
   @Test
   public void testVerifyAgainstDifferentObjectId() throws Exception {
-    AuthInfo info = auth.generateAuthInfo("o", zeroId(), 1);
-    assertThat(auth.verifyAuthInfo(info.authToken, "o",
-        LongObjectId.fromString("123456789012345678901234567890"
-            + "123456789012345678901234567890" + "1234"))).isFalse();
+    AuthInfo info = auth.generateAuthInfo("o", zeroId(), Instant.now(), 1L);
+    assertThat(
+            auth.verifyAuthInfo(
+                info.authToken(),
+                "o",
+                LongObjectId.fromString(
+                    "123456789012345678901234567890" + "123456789012345678901234567890" + "1234")))
+        .isFalse();
   }
 }

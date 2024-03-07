@@ -14,58 +14,34 @@
 
 package com.googlesource.gerrit.plugins.lfs;
 
-import com.google.common.base.Function;
 import com.google.common.collect.Maps;
-import com.google.gerrit.extensions.restapi.ResourceNotFoundException;
 import com.google.gerrit.extensions.restapi.RestApiException;
 import com.google.gerrit.extensions.restapi.RestReadView;
-import com.google.gerrit.server.CurrentUser;
-import com.google.gerrit.server.IdentifiedUser;
-import com.google.gerrit.server.config.AllProjectsName;
 import com.google.gerrit.server.project.ProjectResource;
 import com.google.inject.Inject;
-import com.google.inject.Provider;
 import com.google.inject.Singleton;
-
 import java.util.HashMap;
 import java.util.List;
 
 @Singleton
 class GetLfsGlobalConfig implements RestReadView<ProjectResource> {
-  private static final Function<LfsBackend, LfsBackendType> TO_BACKEND_CFG =
-      new Function<LfsBackend, LfsBackendType>() {
-        @Override
-        public LfsBackendType apply(LfsBackend input) {
-          return input.type;
-        }
-      };
-
   private final LfsConfigurationFactory lfsConfigFactory;
-  private final AllProjectsName allProjectsName;
-  private final Provider<CurrentUser> self;
+  private final LfsAdminView adminView;
 
   @Inject
-  GetLfsGlobalConfig(LfsConfigurationFactory lfsConfigFactory,
-      AllProjectsName allProjectsName,
-      Provider<CurrentUser> self) {
+  GetLfsGlobalConfig(LfsConfigurationFactory lfsConfigFactory, LfsAdminView adminView) {
     this.lfsConfigFactory = lfsConfigFactory;
-    this.allProjectsName = allProjectsName;
-    this.self = self;
+    this.adminView = adminView;
   }
 
   @Override
   public LfsGlobalConfigInfo apply(ProjectResource resource) throws RestApiException {
-    IdentifiedUser user = self.get().asIdentifiedUser();
-    if (!(resource.getNameKey().equals(allProjectsName)
-        && user.getCapabilities().canAdministrateServer())) {
-      throw new ResourceNotFoundException();
-    }
+    adminView.validate(resource);
 
     LfsGlobalConfigInfo info = new LfsGlobalConfigInfo();
     LfsGlobalConfig globalConfig = lfsConfigFactory.getGlobalConfig();
     info.defaultBackendType = globalConfig.getDefaultBackend().type;
-    info.backends = Maps.transformValues(globalConfig.getBackends(),
-        TO_BACKEND_CFG);
+    info.backends = Maps.transformValues(globalConfig.getBackends(), b -> b.type);
 
     List<LfsProjectConfigSection> configSections =
         lfsConfigFactory.getProjectsConfig().getConfigSections();

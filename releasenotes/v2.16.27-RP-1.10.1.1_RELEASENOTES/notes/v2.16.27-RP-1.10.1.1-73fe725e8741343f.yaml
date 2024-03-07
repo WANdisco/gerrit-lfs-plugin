@@ -1,0 +1,4 @@
+---
+fixes:
+  - Gerrit 2.16.27 supported by GerritMS 1.10.1
+  - JGit improvements see - 5.1.15-WDv1

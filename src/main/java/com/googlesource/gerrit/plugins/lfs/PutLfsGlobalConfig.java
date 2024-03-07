@@ -26,60 +26,47 @@ import com.google.gerrit.extensions.restapi.ResourceNotFoundException;
 import com.google.gerrit.extensions.restapi.RestApiException;
 import com.google.gerrit.extensions.restapi.RestModifyView;
 import com.google.gerrit.reviewdb.client.Project;
-import com.google.gerrit.server.CurrentUser;
-import com.google.gerrit.server.IdentifiedUser;
-import com.google.gerrit.server.config.AllProjectsName;
-import com.google.gerrit.server.git.MetaDataUpdate;
+import com.google.gerrit.server.git.meta.MetaDataUpdate;
 import com.google.gerrit.server.project.ProjectResource;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.Singleton;
-
-import org.eclipse.jgit.errors.ConfigInvalidException;
-import org.eclipse.jgit.errors.RepositoryNotFoundException;
-import org.eclipse.jgit.lib.Config;
-
 import java.io.IOException;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import org.eclipse.jgit.errors.ConfigInvalidException;
+import org.eclipse.jgit.errors.RepositoryNotFoundException;
+import org.eclipse.jgit.lib.Config;
 
 @Singleton
-class PutLfsGlobalConfig
-    implements RestModifyView<ProjectResource, LfsGlobalConfigInput> {
+class PutLfsGlobalConfig implements RestModifyView<ProjectResource, LfsGlobalConfigInput> {
 
   private final String pluginName;
-  private final AllProjectsName allProjectsName;
-  private final Provider<CurrentUser> self;
+  private final LfsAdminView adminView;
   private final Provider<MetaDataUpdate.User> metaDataUpdateFactory;
   private final LfsConfigurationFactory lfsConfigFactory;
   private final GetLfsGlobalConfig get;
 
   @Inject
-  PutLfsGlobalConfig(@PluginName String pluginName,
-      AllProjectsName allProjectsName,
-      Provider<CurrentUser> self,
+  PutLfsGlobalConfig(
+      @PluginName String pluginName,
+      LfsAdminView adminView,
       Provider<MetaDataUpdate.User> metaDataUpdateFactory,
       LfsConfigurationFactory lfsConfigFactory,
       GetLfsGlobalConfig get) {
     this.pluginName = pluginName;
-    this.allProjectsName = allProjectsName;
-    this.self = self;
+    this.adminView = adminView;
     this.metaDataUpdateFactory = metaDataUpdateFactory;
     this.lfsConfigFactory = lfsConfigFactory;
     this.get = get;
   }
 
   @Override
-  public LfsGlobalConfigInfo apply(ProjectResource resource,
-      LfsGlobalConfigInput input) throws RestApiException {
-    IdentifiedUser user = self.get().asIdentifiedUser();
+  public LfsGlobalConfigInfo apply(ProjectResource resource, LfsGlobalConfigInput input)
+      throws RestApiException {
+    adminView.validate(resource);
     Project.NameKey projectName = resource.getNameKey();
-
-    if (!(projectName.equals(allProjectsName)
-        && user.getCapabilities().canAdministrateServer())) {
-      throw new ResourceNotFoundException();
-    }
 
     if (input == null) {
       input = new LfsGlobalConfigInput();
@@ -90,38 +77,30 @@ class PutLfsGlobalConfig
       try {
         config.load(md);
       } catch (ConfigInvalidException | IOException e) {
-        throw new ResourceConflictException(
-            "Cannot read LFS config in " + projectName);
+        throw new ResourceConflictException("Cannot read LFS config in " + projectName);
       }
       Config cfg = new Config();
       if (input.namespaces != null) {
-        Set<String> backends =
-            lfsConfigFactory.getGlobalConfig().getBackends().keySet();
-        Set<Entry<String, LfsProjectConfigInfo>> namespaces =
-            input.namespaces.entrySet();
+        Set<String> backends = lfsConfigFactory.getGlobalConfig().getBackends().keySet();
+        Set<Entry<String, LfsProjectConfigInfo>> namespaces = input.namespaces.entrySet();
         for (Map.Entry<String, LfsProjectConfigInfo> namespace : namespaces) {
           LfsProjectConfigInfo info = namespace.getValue();
           if (info.enabled != null) {
-            cfg.setBoolean(
-                pluginName, namespace.getKey(), KEY_ENABLED, info.enabled);
+            cfg.setBoolean(pluginName, namespace.getKey(), KEY_ENABLED, info.enabled);
           }
           if (info.maxObjectSize != null) {
-            cfg.setLong(
-                pluginName, namespace.getKey(),
-                KEY_MAX_OBJECT_SIZE, info.maxObjectSize);
+            cfg.setLong(pluginName, namespace.getKey(), KEY_MAX_OBJECT_SIZE, info.maxObjectSize);
           }
           if (info.readOnly != null) {
-            cfg.setBoolean(
-                pluginName, namespace.getKey(), KEY_READ_ONLY, info.readOnly);
+            cfg.setBoolean(pluginName, namespace.getKey(), KEY_READ_ONLY, info.readOnly);
           }
           if (!Strings.isNullOrEmpty(info.backend)) {
             if (!backends.contains(info.backend)) {
               throw new ResourceConflictException(
-                  String.format("Namespace %s: backend %s does not exist",
-                      namespace, info.backend));
+                  String.format(
+                      "Namespace %s: backend %s does not exist", namespace, info.backend));
             }
-            cfg.setString(pluginName, namespace.getKey(),
-                KEY_BACKEND, info.backend);
+            cfg.setString(pluginName, namespace.getKey(), KEY_BACKEND, info.backend);
           }
         }
       }
@@ -131,11 +110,9 @@ class PutLfsGlobalConfig
       } catch (IOException e) {
         if (e.getCause() instanceof ConfigInvalidException) {
           throw new ResourceConflictException(
-              "Cannot update LFS config in " + projectName
-              + ": " + e.getCause().getMessage());
+              "Cannot update LFS config in " + projectName + ": " + e.getCause().getMessage());
         }
-        throw new ResourceConflictException(
-            "Cannot update LFS config in " + projectName);
+        throw new ResourceConflictException("Cannot update LFS config in " + projectName);
       }
     } catch (RepositoryNotFoundException e) {
       throw new ResourceNotFoundException(projectName.get());
